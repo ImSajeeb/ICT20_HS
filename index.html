@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,102 +18,458 @@
         }
     </script>
     <style>
+        /* Premium Typography */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
 
         :root {
+            /* Refined Slate/Navy Dark Theme */
             --bg: #0f172a;
             --surface: #1e293b;
             --card: #0b1121;
             --card-hover: #162032;
             --border: #334155;
+
+            /* Vibrant but balanced accents */
             --accent-blue: #3b82f6;
             --accent-purple: #8b5cf6;
             --accent-green: #10b981;
             --accent-orange: #f59e0b;
             --accent-pink: #ec4899;
             --accent-teal: #06b6d4;
+            --accent-red: #ef4444;
+
+            /* Text */
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 30px 20px 60px; overflow-y: scroll; -webkit-font-smoothing: antialiased; }
-        body::before { content: ''; position: fixed; top: -250px; left: -250px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 60%); pointer-events: none; z-index: -1; }
-        .container { max-width: 900px; margin: 0 auto; position: relative; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        /* UNIVERSAL NAVIGATION BAR */
-        .nav-buttons { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-        .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; font-family: 'Inter', sans-serif; }
-        
-        .nav-btn.routine { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); } /* Active State */
-        .nav-btn.bus { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); }
-        .nav-btn.bus:hover { background: var(--accent-green); color: #000; }
-        .nav-btn.cal { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border-color: rgba(139, 92, 246, 0.3); }
-        .nav-btn.cal:hover { background: var(--accent-purple); color: #fff; }
-        .nav-btn.tgt { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); border-color: rgba(245, 158, 11, 0.3); }
-        .nav-btn.tgt:hover { background: var(--accent-orange); color: #000; }
-        
-        /* PWA Install Button */
-        .nav-btn.install { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); border-color: rgba(236, 72, 153, 0.3); display: none; }
-        .nav-btn.install:hover { background: var(--accent-pink); color: #fff; }
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 30px 20px 60px;
+            overflow-y: scroll;
+            -webkit-font-smoothing: antialiased;
+        }
 
-        /* HEADER */
-        header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
-        .title-block h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
-        .title-block p { font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .live-clock { text-align: right; }
-        .live-clock .time { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--text-main); letter-spacing: 1px; }
-        .live-clock .day-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1.5px; margin-top: 2px; }
+        /* Subtle background glow */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -250px;
+            left: -250px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
 
-        /* NOTICE BAR */
-        .notice-bar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-bottom: 24px; display: none; overflow: hidden; align-items: stretch; }
-        .notice-label { background: var(--accent-orange); color: #000; font-weight: 800; font-size: 0.7rem; padding: 10px 16px; text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; z-index: 2; box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2); }
-        .marquee-wrapper { flex: 1; overflow: hidden; position: relative; display: flex; align-items: center; }
-        .marquee-text { white-space: nowrap; font-weight: 600; font-size: 0.85rem; color: var(--accent-orange); animation: marquee 20s linear infinite; padding-left: 100%; }
-        .marquee-text:hover { animation-play-state: paused; }
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* HEADER ALIGNMENT */
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .title-block h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+
+        .title-block p {
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* PREMIUM NAVIGATION BUTTONS */
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.bus {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-btn.bus:hover {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .nav-btn.cal {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .nav-btn.cal:hover {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .nav-btn.tgt {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .nav-btn.tgt:hover {
+            background: var(--accent-orange);
+            color: #000;
+        }
+
+        .live-clock {
+            text-align: right;
+        }
+
+        .live-clock .time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+
+        .live-clock .day-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        /* NOTICE BAR (TICKER) */
+        .notice-bar {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            overflow: hidden;
+            align-items: stretch;
+        }
+
+        .notice-label {
+            background: var(--accent-orange);
+            color: #000;
+            font-weight: 800;
+            font-size: 0.7rem;
+            padding: 10px 16px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .marquee-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .marquee-text {
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--accent-orange);
+            animation: marquee 20s linear infinite;
+            padding-left: 100%;
+        }
+
+        .marquee-text:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
 
         /* TODAY BANNER */
-        .today-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
-        .today-badge { background: var(--accent-blue); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 5px 12px; border-radius: 6px; }
-        .today-info { font-size: 0.95rem; color: var(--text-main); font-weight: 500; }
-        .today-info span { color: var(--text-muted); }
+        .today-banner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
-        /* TABS */
-        .day-tabs { display: flex; background: var(--card); padding: 6px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
-        .tab { flex: 1; padding: 10px 0; background: transparent; border: none; border-radius: 8px; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; position: relative; }
-        .tab:hover { color: var(--text-main); }
-        .tab.active { background: var(--surface); color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); }
-        .tab.is-today { color: var(--accent-green); }
-        .tab.active.is-today { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .tab.is-today::after { content: ''; position: absolute; top: 6px; right: 8px; width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; }
+        .today-badge {
+            background: var(--accent-blue);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
 
-        /* SCHEDULE GRID */
-        .schedule { display: none; flex-direction: column; gap: 12px; }
-        .schedule.visible { display: flex; }
-        .slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; transition: all 0.25s ease; display: grid; grid-template-columns: 90px 80px 1fr 120px; align-items: center; gap: 20px; }
-        .slot:hover { background: var(--card-hover); border-color: #475569; }
-        .slot.active-now { border-color: var(--accent-green); background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, var(--card) 100%); box-shadow: 0 0 24px rgba(16, 185, 129, 0.1); transform: scale(1.02); z-index: 10; }
-        .slot.active-now::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; background: var(--accent-green); border-radius: 4px 0 0 4px; }
-        .slot.finished-slot { opacity: 0.4; background: transparent; }
-        .slot.finished-slot:hover { transform: none; background: transparent; cursor: default; }
-        .slot.break-slot { border-style: dashed; background: rgba(30, 41, 59, 0.3); }
+        .today-info {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
 
-        .time-col { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); line-height: 1.6; }
-        .time-col .t-start { color: var(--text-main); font-size: 0.9rem; font-weight: 600; }
-        .subject-tag { padding: 6px 0; border-radius: 6px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; text-align: center; width: 100%; }
-        .subject-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
-        .subject-type { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+        .today-info span {
+            color: var(--text-muted);
+        }
 
-        .live-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-        .status-pill { font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
-        .status-pill.now { background: var(--accent-green); color: #000; animation: pulse 2s infinite; }
-        .status-pill.upcoming { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
-        .status-pill.finished { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
-        .rem-time { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text-main); }
-        .rem-time.muted { color: var(--text-muted); font-weight: 500; }
+        /* SEGMENTED DAY TABS */
+        .day-tabs {
+            display: flex;
+            background: var(--card);
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
 
-        @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } }
+        .tab {
+            flex: 1;
+            padding: 10px 0;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            background: var(--surface);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab.is-today {
+            color: var(--accent-green);
+        }
+
+        .tab.active.is-today {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tab.is-today::after {
+            content: '';
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+        }
+
+        /* SCHEDULE GRID ALIGNMENT */
+        .schedule {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule.visible {
+            display: flex;
+        }
+
+        .slot {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            transition: all 0.25s ease;
+            display: grid;
+            grid-template-columns: 90px 80px 1fr 120px;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .slot:hover {
+            background: var(--card-hover);
+            border-color: #475569;
+        }
+
+        .slot.active-now {
+            border-color: var(--accent-green);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, var(--card) 100%);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.1);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .slot.active-now::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: -1px;
+            bottom: -1px;
+            width: 4px;
+            background: var(--accent-green);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .slot.finished-slot {
+            opacity: 0.4;
+            background: transparent;
+        }
+
+        .slot.finished-slot:hover {
+            transform: none;
+            background: transparent;
+            cursor: default;
+        }
+
+        .slot.break-slot {
+            border-style: dashed;
+            background: rgba(30, 41, 59, 0.3);
+        }
+
+        .time-col {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .time-col .t-start {
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .subject-tag {
+            padding: 6px 0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .subject-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .subject-type {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .live-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-pill.now {
+            background: var(--accent-green);
+            color: #000;
+            animation: pulse 2s infinite;
+        }
+
+        .status-pill.upcoming {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-pill.finished {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .rem-time {
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .rem-time.muted {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        }
 
         /* SUBJECT COLORS */
         .c-dsp { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.2); }
@@ -123,6 +480,68 @@
         .c-mbs { background: rgba(6, 182, 212, 0.15); color: var(--accent-teal); border: 1px solid rgba(6, 182, 212, 0.2); }
         .c-break { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
 
+
+        /* ========================================================
+           MINIMAL PROGRESS BAR (MOVED TO BOTTOM)
+           ======================================================== */
+        .premium-progress-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 40px; /* Added spacing from the schedule grid above */
+            margin-bottom: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pp-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .pp-title-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .pp-title-box h3 { font-size: 0.85rem; font-weight: 600; color: var(--text-main); letter-spacing: 0.5px; }
+        
+        .pp-phase-badge { 
+            font-size: 0.65rem; font-weight: 700; color: #fff; 
+            text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; 
+        }
+        .pp-phase-badge.running { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+        .pp-phase-badge.pl { background: rgba(245, 158, 11, 0.2); color: var(--accent-orange); }
+        .pp-phase-badge.exam { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+        .pp-phase-badge.finish { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+        
+        .pp-counter-box { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+        
+        .pp-bar-shell { 
+            width: 100%; height: 6px; background: rgba(15, 23, 42, 0.6); 
+            border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .pp-bar-fill { 
+            height: 100%; width: 0%; border-radius: 10px; transition: width 1s ease; 
+        }
+        
+        .fill-running { background: var(--accent-teal); }
+        .fill-pl { background: var(--accent-orange); }
+        .fill-exam { background: var(--accent-red); }
+        .fill-finish { background: var(--accent-green); }
+        
+        .pp-timeline-labels { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+        
+        .pp-milestone-box { 
+            font-size: 0.75rem; color: var(--text-muted); display: none; align-items: center; justify-content: space-between;
+            border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 2px;
+        }
+        .pp-milestone-box span#milestone-value { color: var(--text-main); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+        /* ======================================================== */
+
+
+        /* LEGEND */
         .legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border); }
         .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
@@ -134,9 +553,13 @@
         .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
         .credit-pill:hover { border-color: #475569; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); transform: translateY(-2px); }
         .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; }
-        .credit-pill span.dev { color: var(--accent-blue); }
-        .credit-pill span.idea { color: var(--accent-teal); }
+        .credit-pill span.dev { color: var(--accent-teal); }
+        .credit-pill span.idea { color: var(--accent-blue); }
         .credit-divider { height: 16px; width: 1px; background: var(--border); }
+
+        /* PWA Install Button specific styling */
+        .nav-btn.install { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); border: 1px solid rgba(236, 72, 153, 0.3); display: none; }
+        .nav-btn.install:hover { background: var(--accent-pink); color: #fff; }
 
         /* MOBILE RESPONSIVENESS */
         @media (max-width: 650px) {
@@ -154,11 +577,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        
+
         <div class="nav-buttons">
-            <a href="index.html" class="nav-btn routine">📅 Routine</a>
+            <a href="index.html" class="nav-btn routine" style="background: var(--accent-blue); color: #fff; border-color: var(--accent-blue);">📅 Routine</a>
             <a href="bus.html" class="nav-btn bus">🚌 Bus</a>
             <a href="calendar.html" class="nav-btn cal">📆 Calendar</a>
             <a href="target.html" class="nav-btn tgt">🎯 Grade</a>
@@ -189,16 +613,56 @@
         </div>
 
         <div class="day-tabs" id="day-tabs"></div>
+
         <div id="schedules-container"></div>
 
+        <!-- PROGRESS BAR MOVED HERE: Below classes, above legend -->
+        <div class="premium-progress-card" id="progress-card">
+            <div class="pp-header">
+                <div class="pp-title-box">
+                    <h3>Semester Progress</h3>
+                    <div id="semester-phase" class="pp-phase-badge">Loading...</div>
+                </div>
+                <div id="progress-percent" class="pp-counter-box">0%</div>
+            </div>
+            
+            <div class="pp-bar-shell">
+                <div id="bar-fill" class="pp-bar-fill"></div>
+            </div>
+
+            <div class="pp-timeline-labels">
+                <div id="sem-start-label">Start: --/--/--</div>
+                <div id="sem-end-label" style="text-align: right;">Exams End: --/--/--</div>
+            </div>
+            
+            <div id="milestone-box" class="pp-milestone-box">
+                <span id="milestone-label">Upcoming:</span> 
+                <span id="milestone-value"></span>
+            </div>
+        </div>
+
         <div class="legend">
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-blue)"></div>DSP</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-purple)"></div>CN</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-green)"></div>WAD</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-orange)"></div>STAT</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-pink)"></div>Ethics</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-teal)"></div>MBS</div>
-            <div class="legend-item"><div class="legend-dot" style="background: var(--border)"></div>Break</div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-blue)"></div>DSP
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-purple)"></div>CN
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-green)"></div>WAD
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-orange)"></div>STAT
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-pink)"></div>Ethics
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--accent-teal)"></div>MBS
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: var(--border)"></div>Break
+            </div>
         </div>
 
         <div class="credit-wrapper">
@@ -274,10 +738,17 @@
             return `${h12}:${pad(m)} ${ampm}`;
         }
 
-        function getWeekDayIndex(jsDay) { return (jsDay + 1) % 7; }
+        // Convert standard JS getDay() (Sun=0) to our Weekly Index where Saturday=0
+        function getWeekDayIndex(jsDay) {
+            return (jsDay + 1) % 7;
+        }
 
-        function getBDTime() { return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })); }
+        // Ensure time is always strictly Bangladesh Time (UTC+6)
+        function getBDTime() {
+            return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" }));
+        }
 
+        // Get the current number of seconds passed since the start of Saturday (00:00:00)
         function getCurrentWeekSecs() {
             const now = getBDTime();
             const dayIndex = getWeekDayIndex(now.getDay());
@@ -289,17 +760,20 @@
             const h = Math.floor((totalSeconds % 86400) / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
             const s = totalSeconds % 60;
+
             let parts = [];
             if (d > 0) parts.push(`${d}d`);
             if (h > 0 || d > 0) parts.push(`${h}h`);
             if (m > 0 || h > 0 || d > 0) parts.push(`${pad(m)}m`);
             parts.push(`${pad(s)}s`);
+
             return parts.join(' ');
         }
 
         function buildSlot(slot, day) {
             const [sh, sm, eh, em, subj, cls, type] = slot;
             const isBreak = subj === 'BREAK';
+
             const dayIndex = getWeekDayIndex(DAYS.indexOf(day));
             const startWeekSecs = (dayIndex * 86400) + (sh * 3600) + (sm * 60);
             const endWeekSecs = (dayIndex * 86400) + (eh * 3600) + (em * 60);
@@ -361,6 +835,7 @@
                 tab.textContent = day.slice(0, 3);
                 tab.onclick = () => setActiveTab(day);
                 tabsEl.appendChild(tab);
+
                 container.appendChild(renderDay(day));
             });
 
@@ -372,6 +847,7 @@
         function updateTodayBanner(today) {
             const infoEl = document.getElementById('today-info');
             const slots = schedule[today] || [];
+
             const now = getBDTime();
             const nowMins = now.getHours() * 60 + now.getMinutes();
 
@@ -394,6 +870,7 @@
 
         function updateLiveStatus() {
             const nowWeekSecs = getCurrentWeekSecs();
+
             document.querySelectorAll('.slot').forEach(slot => {
                 const start = parseInt(slot.dataset.weekStart);
                 const end = parseInt(slot.dataset.weekEnd);
@@ -403,16 +880,20 @@
                     slot.classList.remove('active-now');
                     slot.classList.add('finished-slot');
                     statusDiv.innerHTML = `<span class="status-pill finished">Finished</span>`;
+
                 } else if (nowWeekSecs >= start && nowWeekSecs < end) {
                     slot.classList.add('active-now');
                     slot.classList.remove('finished-slot');
+
                     const remSecs = end - nowWeekSecs;
                     statusDiv.innerHTML = `
                         <span class="status-pill now">NOW</span>
                         <div class="rem-time">${formatCountdown(remSecs)}</div>
                     `;
+
                 } else {
                     slot.classList.remove('active-now', 'finished-slot');
+
                     const startsIn = start - nowWeekSecs;
                     statusDiv.innerHTML = `
                         <span class="status-pill upcoming">Upcoming</span>
@@ -422,25 +903,138 @@
             });
         }
 
+        // ========================================================
+        // SEMESTER TIMELINE CONFIGURATION
+        // ========================================================
+        const TIMELINE = {
+            classStart: '2026-04-11',
+            classEnd: '2026-08-04',
+            plStart: '2026-08-05',
+            examStart: '2026-08-22',
+            examEnd: '2026-09-21'
+        };
+
+        function updateSemesterProgress() {
+            const now = getBDTime().setHours(0, 0, 0, 0); 
+            
+            const startMs = new Date(TIMELINE.classStart).getTime();
+            const classEndMs = new Date(TIMELINE.classEnd).getTime();
+            const plStartMs = new Date(TIMELINE.plStart).getTime();
+            const examStartMs = new Date(TIMELINE.examStart).getTime();
+            const examEndMs = new Date(TIMELINE.examEnd).getTime();
+
+            const fillBar = document.getElementById('bar-fill');
+            const percentText = document.getElementById('progress-percent');
+            const phaseText = document.getElementById('semester-phase');
+            const mBox = document.getElementById('milestone-box');
+            const mLabel = document.getElementById('milestone-label');
+            const mValue = document.getElementById('milestone-value');
+
+            document.getElementById('sem-start-label').textContent = `Start: ${new Date(TIMELINE.classStart).getDate()} ${MONTHS_SH[new Date(TIMELINE.classStart).getMonth()]}`;
+            document.getElementById('sem-end-label').textContent = `Exams End: ${new Date(TIMELINE.examEnd).getDate()} ${MONTHS_SH[new Date(TIMELINE.examEnd).getMonth()]}`;
+
+            // Reset classes
+            phaseText.className = 'pp-phase-badge';
+            fillBar.className = 'pp-bar-fill';
+            
+            // Phase 1: Before Semester Starts
+            if (now < startMs) {
+                fillBar.style.width = '0%';
+                fillBar.classList.add('fill-running');
+                percentText.textContent = '0%';
+                phaseText.textContent = 'Vacation';
+                phaseText.classList.add('running');
+                mLabel.textContent = 'Classes Begin:';
+                mValue.textContent = `${Math.ceil((startMs - now) / (1000 * 3600 * 24))} days`;
+                mBox.style.display = 'flex';
+            } 
+            // Phase 2: Running Classes (Progresses from start to PL start)
+            else if (now >= startMs && now < plStartMs) {
+                const totalClassDays = (plStartMs - startMs);
+                const elapsedClassDays = Math.min(now - startMs, totalClassDays);
+                const percentage = Math.round((elapsedClassDays / totalClassDays) * 100);
+                
+                fillBar.style.width = `${percentage}%`;
+                fillBar.classList.add('fill-running');
+                percentText.textContent = `${percentage}%`;
+                phaseText.textContent = 'Classes Running';
+                phaseText.classList.add('running');
+                
+                mLabel.textContent = 'PL Starts in:';
+                mValue.textContent = `${Math.ceil((plStartMs - now) / (1000 * 3600 * 24))} days`;
+                mBox.style.display = 'flex';
+            } 
+            // Phase 3: Prep Leave Phase (Progresses from PL start to Exam start)
+            else if (now >= plStartMs && now < examStartMs) {
+                const totalPlDays = (examStartMs - plStartMs);
+                const elapsedPlDays = Math.min(now - plStartMs, totalPlDays);
+                const percentage = Math.round((elapsedPlDays / totalPlDays) * 100);
+
+                fillBar.style.width = `${percentage}%`;
+                fillBar.classList.add('fill-pl');
+                percentText.textContent = `${percentage}%`; 
+                phaseText.textContent = 'Prep Leave (PL)';
+                phaseText.classList.add('pl');
+                
+                mLabel.textContent = 'Exam Starts in:';
+                mValue.textContent = `${Math.ceil((examStartMs - now) / (1000 * 3600 * 24))} days`;
+                mBox.style.display = 'flex';
+            } 
+            // Phase 4: Semester Final Exams Phase (Progresses from Exam start to Exam end)
+            else if (now >= examStartMs && now <= examEndMs) {
+                const totalExamDays = (examEndMs - examStartMs);
+                const elapsedExamDays = Math.min(now - examStartMs, totalExamDays);
+                const percentage = totalExamDays > 0 ? Math.round((elapsedExamDays / totalExamDays) * 100) : 100;
+                
+                fillBar.style.width = `${percentage}%`;
+                fillBar.classList.add('fill-exam');
+                percentText.textContent = `${percentage}%`;
+                phaseText.textContent = 'Finals Underway';
+                phaseText.classList.add('exam');
+                
+                mLabel.textContent = 'Remaining:';
+                mValue.textContent = `${Math.ceil((examEndMs - now) / (1000 * 3600 * 24))} days left`;
+                mBox.style.display = 'flex';
+            } 
+            // Phase 5: Semester Finished/Break
+            else {
+                fillBar.style.width = '100%';
+                fillBar.classList.add('fill-finish');
+                percentText.textContent = '✓';
+                phaseText.textContent = 'Semester Ended';
+                phaseText.classList.add('finish');
+                mBox.style.display = 'none';
+            }
+        }
+
+        const MONTHS_SH = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
         function updateClock() {
             const now = getBDTime();
             let h = now.getHours();
             const m = pad(now.getMinutes());
             const s = pad(now.getSeconds());
+
             const ampm = h >= 12 ? 'PM' : 'AM';
-            h = h % 12; h = h ? h : 12;
+            h = h % 12;
+            h = h ? h : 12; 
 
             document.getElementById('clock').textContent = `${pad(h)}:${m}:${s} ${ampm}`;
             document.getElementById('clock-day').textContent = DAYS[now.getDay()];
+
             updateLiveStatus();
         }
 
-        // DYNAMIC MULTI-NOTICE FETCHER
+        // --- DYNAMIC MULTI-NOTICE FETCHER (GOOGLE SHEETS) ---
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMv9q_3Dw0nNvFHRAznaIgz-J5N7Ntq-vYIuX7mh2Vin9UybNgvhMJOAQDAEurxr6u4PdZSbtC3Ggw/pub?output=csv';
+
         fetch(sheetUrl + '&t=' + new Date().getTime())
             .then(response => response.text())
             .then(csvText => {
-                const notices = csvText.split('\n').map(row => row.trim().replace(/^"|"$/g, '')).filter(row => row.length > 0);
+                const notices = csvText.split('\n')
+                    .map(row => row.trim().replace(/^"|"$/g, ''))
+                    .filter(row => row.length > 0);
+
                 if (notices.length > 0) {
                     const combinedNotice = notices.join(' &nbsp;&nbsp;&nbsp;✦&nbsp;&nbsp;&nbsp; ');
                     document.getElementById('notice-text').innerHTML = combinedNotice;
@@ -448,12 +1042,13 @@
                 } else {
                     document.getElementById('notice-bar').style.display = 'none';
                 }
-            })
-            .catch(err => console.log('Could not load notices:', err));
+            }).catch(err => console.log('Notice fetch error:', err));
 
         buildUI();
+        updateSemesterProgress();
         updateClock();
-        setInterval(updateClock, 1000);
+        setInterval(updateClock, 1000); 
     </script>
 </body>
+
 </html>
