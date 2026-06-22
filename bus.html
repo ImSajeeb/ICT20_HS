@@ -1,95 +1,996 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MBSTU Bus Schedule</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<link rel="icon" href="icon.png">
-<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js')); }</script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
-  :root { --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --border: #334155; --text-main: #f8fafc; --text-muted: #94a3b8; --accent-blue: #3b82f6; --accent-green: #10b981; --accent-orange: #f59e0b; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; padding: 30px 20px; }
-  .container { max-width: 900px; margin: 0 auto; }
-  header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
-  h1 { font-size: 2rem; }
-  .nav-btn { display: inline-flex; padding: 6px 12px; background: rgba(59,130,246,0.15); color: var(--accent-blue); border-radius: 8px; text-decoration: none; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
-  .live-clock { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; }
-  .day-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 6px; margin-bottom: 24px; }
-  .tab { flex: 1; padding: 12px 0; background: transparent; color: var(--text-muted); border: none; font-weight: 600; cursor: pointer; border-radius: 8px; }
-  .tab.active { background: var(--surface); color: #fff; }
-  .schedule { display: none; flex-direction: column; gap: 12px; }
-  .schedule.visible { display: flex; }
-  .slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; align-items: center; }
-  .slot.active-now { border-color: var(--accent-orange); background: linear-gradient(90deg, rgba(245,158,11,0.08), transparent); }
-  .slot.active-return { border-color: var(--accent-green); background: linear-gradient(90deg, rgba(16,185,129,0.08), transparent); }
-  .slot.finished-slot { opacity: 0.5; }
-  .t-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-  .t-time { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; }
-  .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
-  .status-pill.now-city { background: var(--accent-orange); color: #000; }
-  .status-pill.now-campus { background: var(--accent-green); color: #000; }
-  .status-pill.upcoming { border: 1px solid var(--border); }
-  @media (max-width: 650px) { header { flex-direction: column; gap: 16px; } .slot { grid-template-columns: 1fr 1fr; gap: 16px; } .live-status { grid-column: 1/-1; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBSTU Bus Schedule</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icon.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --card: #0b1121;
+            --card-hover: #162032;
+            --border: #334155;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-pink: #ec4899;
+            --accent-teal: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 30px 20px 60px;
+            overflow-y: scroll;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -250px;
+            left: -250px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* UNIVERSAL NAVIGATION BAR */
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .nav-btn.routine {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-btn.routine:hover {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+        .nav-btn.bus {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+        }
+
+        /* Active State */
+        .nav-btn.cal {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .nav-btn.cal:hover {
+            background: var(--accent-purple);
+            color: #fff;
+        }
+
+        .nav-btn.tgt {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-orange);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .nav-btn.tgt:hover {
+            background: var(--accent-orange);
+            color: #000;
+        }
+
+        /* PWA Install Button */
+        .nav-btn.install {
+            background: rgba(236, 72, 153, 0.15);
+            color: var(--accent-pink);
+            border-color: rgba(236, 72, 153, 0.3);
+            display: none;
+        }
+
+        .nav-btn.install:hover {
+            background: var(--accent-pink);
+            color: #fff;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .title-block h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #fff;
+        }
+
+        .title-block p {
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            font-weight: 600;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .live-clock {
+            text-align: right;
+        }
+
+        .live-clock .time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: 1px;
+        }
+
+        .live-clock .day-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        /* LIVE TRACKER BUTTON */
+        .live-track-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            color: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .live-track-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        /* NOTICE BAR */
+        .notice-bar {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            overflow: hidden;
+            align-items: stretch;
+        }
+
+        .notice-label {
+            background: var(--accent-orange);
+            color: #000;
+            font-weight: 800;
+            font-size: 0.7rem;
+            padding: 10px 16px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .marquee-wrapper {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .marquee-text {
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--accent-orange);
+            animation: marquee 20s linear infinite;
+            padding-left: 100%;
+        }
+
+        .marquee-text:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        /* TODAY BANNER */
+        .today-banner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .today-badge {
+            background: var(--accent-green);
+            color: #000;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
+
+        .today-info {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .today-info span {
+            color: var(--text-muted);
+        }
+
+        /* TABS */
+        .day-tabs {
+            display: flex;
+            background: var(--card);
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 0;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            background: var(--surface);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab.is-today {
+            color: var(--accent-green);
+        }
+
+        .tab.active.is-today {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .tab.is-today::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            width: 6px;
+            height: 6px;
+            background: var(--accent-green);
+            border-radius: 50%;
+        }
+
+        /* SCHEDULE GRID */
+        .schedule {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .schedule.visible {
+            display: flex;
+        }
+
+        .slot {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            transition: all 0.25s ease;
+            display: grid;
+            grid-template-columns: 100px 100px 1fr 130px;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .slot:hover {
+            background: var(--card-hover);
+            border-color: #475569;
+        }
+
+        .slot.active-now {
+            border-color: var(--accent-orange);
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, var(--card) 100%);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .slot.active-now::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: -1px;
+            bottom: -1px;
+            width: 4px;
+            background: var(--accent-orange);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .slot.active-return {
+            border-color: var(--accent-green);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, var(--card) 100%);
+            transform: scale(1.02);
+            z-index: 10;
+        }
+
+        .slot.active-return::before {
+            content: '';
+            position: absolute;
+            left: -1px;
+            top: -1px;
+            bottom: -1px;
+            width: 4px;
+            background: var(--accent-green);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .slot.finished-slot {
+            opacity: 0.4;
+            background: transparent;
+        }
+
+        .slot.finished-slot:hover {
+            transform: none;
+            background: transparent;
+            cursor: default;
+        }
+
+        /* COLUMNS */
+        .time-col {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .t-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .t-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .trip-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .trip-tag {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .trip-users {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .trip-users strong {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        .live-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+
+        .status-pill {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-pill.now-city {
+            background: var(--accent-orange);
+            color: #000;
+            animation: pulse-orange 2s infinite;
+        }
+
+        .status-pill.now-campus {
+            background: var(--accent-green);
+            color: #000;
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-pill.upcoming {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .status-pill.finished {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .rem-time {
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .rem-time.muted {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        @keyframes pulse-orange {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+
+            50% {
+                opacity: 0.8;
+                box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+            }
+        }
+
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                opacity: 0.8;
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* SPECIAL NOTES */
+        .special-notes {
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 36px;
+        }
+
+        .special-notes h4 {
+            color: var(--accent-blue);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .special-notes ul {
+            list-style-type: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .special-notes li {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            position: relative;
+            padding-left: 16px;
+            line-height: 1.5;
+        }
+
+        .special-notes li::before {
+            content: '•';
+            color: var(--accent-orange);
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        /* FOOTER */
+        .credit-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 40px;
+            padding-bottom: 20px;
+        }
+
+        .credit-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .credit-pill:hover {
+            border-color: #475569;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .credit-pill span.name {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .credit-pill span.dev {
+            color: var(--accent-blue);
+        }
+
+        .credit-pill span.idea {
+            color: var(--accent-teal);
+        }
+
+        .credit-divider {
+            height: 16px;
+            width: 1px;
+            background: var(--border);
+        }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 650px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .live-clock {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+            }
+
+            .slot {
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+                padding: 16px;
+            }
+
+            .trip-info {
+                grid-column: 1 / -1;
+            }
+
+            .live-status {
+                grid-column: 1 / -1;
+                flex-direction: row-reverse;
+                justify-content: space-between;
+                align-items: center;
+                border-top: 1px solid var(--border);
+                padding-top: 12px;
+            }
+
+            .credit-pill {
+                flex-direction: column;
+                gap: 8px;
+                padding: 14px 24px;
+                border-radius: 16px;
+            }
+
+            .credit-divider {
+                height: 1px;
+                width: 40px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-<div class="container">
-  <header>
-    <div><a href="index.html" class="nav-btn">← Back to Routine</a><h1>Bus Schedule</h1></div>
-    <div class="live-clock" id="clock">--:--</div>
-  </header>
-  <div class="day-tabs">
-    <button class="tab" id="tab-regular" onclick="setActiveTab('regular')">Regular (Sat-Wed)</button>
-    <button class="tab" id="tab-offday" onclick="setActiveTab('offday')">Off-Day (Thu-Fri)</button>
-  </div>
-  <div id="sched-regular" class="schedule"></div>
-  <div id="sched-offday" class="schedule"></div>
-</div>
-<script>
-const scheds = {
-  regular: [[8,0,8,30,3],[9,0,9,30,3],[10,0,10,30,2],[13,10,13,40,3],[14,30,15,0,4],[16,10,16,40,6],[17,15,17,45,4],[18,20,19,0,4],[20,10,20,50,3]],
-  offday: [[9,0,9,30,2],[14,30,15,0,3],[16,30,17,0,4],[18,0,19,0,2],[20,20,21,0,2]]
-};
-function pad(n){ return String(n).padStart(2,'0'); }
-function formatTime(h,m){ return `${h%12||12}:${pad(m)} ${h>=12?'PM':'AM'}`; }
-function getBDTime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"})); }
-function getTodayType() { const d = getBDTime().getDay(); return (d===4||d===5)?'offday':'regular'; }
+    <div class="container">
 
-function buildSlot(data, i, type) {
-  const [cH, cM, tH, tM, bCount] = data;
-  const div = document.createElement('div'); div.className = 'slot'; div.dataset.type = type;
-  div.dataset.c = (cH*3600)+(cM*60); div.dataset.t = (tH*3600)+(tM*60); div.dataset.e = (tH*3600)+(tM*60)+2100;
-  div.innerHTML = `<div><div class="t-label">Departs Campus</div><div class="t-time">${formatTime(cH,cM)}</div></div><div><div class="t-label">Departs City</div><div class="t-time">${formatTime(tH,tM)}</div></div><div><div class="t-label">Trip ${i+1}</div><div style="font-size:0.75rem">${bCount} Buses</div></div><div class="live-status"></div>`;
-  return div;
-}
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn routine">📅 Routine</a>
+            <a href="bus.html" class="nav-btn bus">🚌 Bus</a>
+            <a href="calendar.html" class="nav-btn cal">📆 Calendar</a>
+            <a href="target.html" class="nav-btn tgt">🎯 Grade</a>
+            <button id="install-btn" class="nav-btn install">📱 Install App</button>
+        </div>
 
-function setActiveTab(type) {
-  document.getElementById('tab-regular').classList.toggle('active', type==='regular');
-  document.getElementById('tab-offday').classList.toggle('active', type==='offday');
-  document.getElementById('sched-regular').classList.toggle('visible', type==='regular');
-  document.getElementById('sched-offday').classList.toggle('visible', type==='offday');
-}
+        <header>
+            <div class="title-block">
+                <h1>Bus Schedule</h1>
+                <p>MBSTU · Student Transport</p>
+            </div>
+            <div class="live-clock">
+                <div class="time" id="clock">--:--:-- --</div>
+                <div class="day-label" id="clock-day">Loading...</div>
+            </div>
+        </header>
 
-function updateStatus() {
-  const now = getBDTime(), nowSecs = (now.getHours()*3600)+(now.getMinutes()*60)+now.getSeconds();
-  document.getElementById('clock').textContent = formatTime(now.getHours(), now.getMinutes());
-  document.querySelectorAll('.slot').forEach(s => {
-    if(s.dataset.type !== getTodayType()) { s.className='slot'; s.querySelector('.live-status').innerHTML='<span class="status-pill upcoming">Inactive</span>'; return; }
-    const c=parseInt(s.dataset.c), t=parseInt(s.dataset.t), e=parseInt(s.dataset.e), stat=s.querySelector('.live-status');
-    if(nowSecs>=e) { s.className='slot finished-slot'; stat.innerHTML='<span class="status-pill upcoming">Finished</span>'; }
-    else if(nowSecs>=t) { s.className='slot active-return'; stat.innerHTML='<span class="status-pill now-campus">Returning</span>'; }
-    else if(nowSecs>=c) { s.className='slot active-now'; stat.innerHTML='<span class="status-pill now-city">To City</span>'; }
-    else { s.className='slot'; stat.innerHTML='<span class="status-pill upcoming">Upcoming</span>'; }
-  });
-}
+        <a href="https://transport.mbstu.ac.bd/MBSTU-Wheels" target="_blank" class="live-track-btn">
+            📍 Open MBSTU Wheels (Live Tracker)
+        </a>
 
-scheds.regular.forEach((s,i)=>document.getElementById('sched-regular').appendChild(buildSlot(s,i,'regular')));
-scheds.offday.forEach((s,i)=>document.getElementById('sched-offday').appendChild(buildSlot(s,i,'offday')));
-setActiveTab(getTodayType()); setInterval(updateStatus, 1000); updateStatus();
-</script>
+        <div class="notice-bar" id="notice-bar">
+            <div class="notice-label">Alert</div>
+            <div class="marquee-wrapper">
+                <div class="marquee-text" id="notice-text"></div>
+            </div>
+        </div>
+
+        <div class="today-banner" id="today-banner">
+            <span class="today-badge">Transport</span>
+            <div class="today-info" id="today-info">Loading tracking...</div>
+        </div>
+
+        <div class="day-tabs" id="day-tabs">
+            <button class="tab" id="tab-regular" data-type="regular">Regular Days (Sat–Wed)</button>
+            <button class="tab" id="tab-offday" data-type="offday">Off-Days (Thu–Fri)</button>
+        </div>
+
+        <div id="sched-regular" class="schedule"></div>
+        <div id="sched-offday" class="schedule"></div>
+
+        <div class="special-notes">
+            <h4>ℹ️ Route Notes (Regular Days)</h4>
+            <ul>
+                <li><strong>4:10 PM Trip:</strong> Bus 0003 (Sonartori) goes up to Shantikunjo Mor. Bus 10 (Roktokorobi)
+                    goes up to Nirala Mor.</li>
+                <li><strong>5:15 PM Trip:</strong> Bus 10 (Roktokorobi) goes up to Nirala Mor.</li>
+            </ul>
+        </div>
+
+        <div class="credit-wrapper">
+            <div class="credit-pill">
+                <div>Crafted by <span class="name idea">Sajeeb Khan</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // PWA INSTALL LOGIC
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-flex';
+        });
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { installBtn.style.display = 'none'; }
+                deferredPrompt = null;
+            }
+        });
+
+        // Data exactly from the Bengali Image (Students Only)
+        const schedules = {
+            regular: [
+                [8, 0, 8, 30, 3], [9, 0, 9, 30, 3], [10, 0, 10, 30, 2], [13, 10, 13, 40, 3],
+                [14, 30, 15, 0, 4], [16, 10, 16, 40, 6], [17, 15, 17, 45, 4], [18, 20, 19, 0, 4], [20, 10, 20, 50, 3]
+            ],
+            offday: [
+                [9, 0, 9, 30, 2], [14, 30, 15, 0, 3], [16, 30, 17, 0, 4], [18, 0, 19, 0, 2], [20, 20, 21, 0, 2]
+            ]
+        };
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function formatTime(h, m) {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12}:${pad(m)} ${ampm}`;
+        }
+
+        function getBDTime() { return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })); }
+
+        function getTodayType() {
+            const day = getBDTime().getDay();
+            return (day === 4 || day === 5) ? 'offday' : 'regular';
+        }
+
+        function getCurrentSecs() {
+            const now = getBDTime();
+            return (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+        }
+
+        function formatCountdown(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            let parts = [];
+            if (h > 0) parts.push(`${h}h`);
+            if (m > 0 || h > 0) parts.push(`${pad(m)}m`);
+            parts.push(`${pad(s)}s`);
+            return parts.join(' ');
+        }
+
+        function buildSlot(slotData, index, type) {
+            const [campusH, campusM, cityH, cityM, busCount] = slotData;
+            const campusSecs = (campusH * 3600) + (campusM * 60);
+            const citySecs = (cityH * 3600) + (cityM * 60);
+            const endSecs = citySecs + (35 * 60);
+
+            const div = document.createElement('div');
+            div.className = 'slot';
+            div.dataset.type = type;
+            div.dataset.campus = campusSecs;
+            div.dataset.city = citySecs;
+            div.dataset.end = endSecs;
+
+            div.innerHTML = `
+                <div class="time-col">
+                    <div class="t-label">Departs Campus</div>
+                    <div class="t-time">${formatTime(campusH, campusM)}</div>
+                </div>
+                <div class="time-col">
+                    <div class="t-label">Departs City</div>
+                    <div class="t-time">${formatTime(cityH, cityM)}</div>
+                </div>
+                <div class="trip-info">
+                    <div class="trip-tag">TRIP ${index + 1}</div>
+                    <div class="trip-users">Students · <strong>${busCount} Buses</strong></div>
+                </div>
+                <div class="live-status"></div>
+            `;
+            return div;
+        }
+
+        function renderSchedules() {
+            const regContainer = document.getElementById('sched-regular');
+            schedules.regular.forEach((slot, i) => regContainer.appendChild(buildSlot(slot, i, 'regular')));
+
+            const offContainer = document.getElementById('sched-offday');
+            schedules.offday.forEach((slot, i) => offContainer.appendChild(buildSlot(slot, i, 'offday')));
+        }
+
+        function setActiveTab(type) {
+            document.getElementById('tab-regular').classList.toggle('active', type === 'regular');
+            document.getElementById('tab-offday').classList.toggle('active', type === 'offday');
+            document.getElementById('sched-regular').classList.toggle('visible', type === 'regular');
+            document.getElementById('sched-offday').classList.toggle('visible', type === 'offday');
+        }
+
+        function buildUI() {
+            const todayType = getTodayType();
+            document.getElementById(`tab-${todayType}`).classList.add('is-today');
+            document.getElementById('tab-regular').onclick = () => setActiveTab('regular');
+            document.getElementById('tab-offday').onclick = () => setActiveTab('offday');
+            renderSchedules();
+            setActiveTab(todayType);
+        }
+
+        function updateLiveStatus() {
+            const nowSecs = getCurrentSecs();
+            const todayType = getTodayType();
+
+            document.querySelectorAll('.slot').forEach(slot => {
+                const type = slot.dataset.type;
+                const statusDiv = slot.querySelector('.live-status');
+                const campusSecs = parseInt(slot.dataset.campus);
+                const citySecs = parseInt(slot.dataset.city);
+                const endSecs = parseInt(slot.dataset.end);
+
+                if (type !== todayType) {
+                    slot.className = 'slot';
+                    statusDiv.innerHTML = `<span class="status-pill finished">Inactive</span>`;
+                    return;
+                }
+
+                if (nowSecs >= endSecs) {
+                    slot.className = 'slot finished-slot';
+                    statusDiv.innerHTML = `<span class="status-pill finished">Finished</span>`;
+                } else if (nowSecs >= citySecs && nowSecs < endSecs) {
+                    slot.className = 'slot active-return';
+                    const remSecs = endSecs - nowSecs;
+                    statusDiv.innerHTML = `
+                        <span class="status-pill now-campus">Returning</span>
+                        <div class="rem-time">arr. ${formatCountdown(remSecs)}</div>
+                    `;
+                } else if (nowSecs >= campusSecs && nowSecs < citySecs) {
+                    slot.className = 'slot active-now';
+                    const remSecs = citySecs - nowSecs;
+                    statusDiv.innerHTML = `
+                        <span class="status-pill now-city">To City</span>
+                        <div class="rem-time">dep. ${formatCountdown(remSecs)}</div>
+                    `;
+                } else {
+                    slot.className = 'slot';
+                    const startsIn = campusSecs - nowSecs;
+                    statusDiv.innerHTML = `
+                        <span class="status-pill upcoming">Upcoming</span>
+                        <div class="rem-time muted">in ${formatCountdown(startsIn)}</div>
+                    `;
+                }
+            });
+            updateBanner(nowSecs, todayType);
+        }
+
+        function updateBanner(nowSecs, todayType) {
+            const infoEl = document.getElementById('today-info');
+            const activeSlots = Array.from(document.getElementById(`sched-${todayType}`).children);
+
+            const currentOrNext = activeSlots.find(slot => {
+                const end = parseInt(slot.dataset.end);
+                return end > nowSecs;
+            });
+
+            if (!currentOrNext) {
+                infoEl.innerHTML = `All buses finished for today <span>— rest up!</span>`;
+                return;
+            }
+
+            const campus = parseInt(currentOrNext.dataset.campus);
+            const city = parseInt(currentOrNext.dataset.city);
+            const tripTag = currentOrNext.querySelector('.trip-tag').innerText;
+
+            if (nowSecs < campus) {
+                infoEl.innerHTML = `Next: <strong>${tripTag}</strong> &nbsp;·&nbsp; <span>Campus Departs in ${formatCountdown(campus - nowSecs)}</span>`;
+            } else if (nowSecs < city) {
+                infoEl.innerHTML = `On Route: <strong>${tripTag}</strong> &nbsp;·&nbsp; <span>City Departs in ${formatCountdown(city - nowSecs)}</span>`;
+            } else {
+                infoEl.innerHTML = `Returning: <strong>${tripTag}</strong> &nbsp;·&nbsp; <span>Heading back to Campus</span>`;
+            }
+        }
+
+        function updateClock() {
+            const now = getBDTime();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let h = now.getHours();
+            const m = pad(now.getMinutes());
+            const s = pad(now.getSeconds());
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12; h = h ? h : 12;
+
+            document.getElementById('clock').textContent = `${pad(h)}:${m}:${s} ${ampm}`;
+            document.getElementById('clock-day').textContent = days[now.getDay()];
+            updateLiveStatus();
+        }
+
+        // Google Sheets Ticker
+        // const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMv9q_3Dw0nNvFHRAznaIgz-J5N7Ntq-vYIuX7mh2Vin9UybNgvhMJOAQDAEurxr6u4PdZSbtC3Ggw/pub?output=csv';
+        // fetch(sheetUrl + '&t=' + new Date().getTime())
+        //     .then(response => response.text())
+        //     .then(csvText => {
+        //         const notices = csvText.split('\n').map(row => row.trim().replace(/^"|"$/g, '')).filter(row => row.length > 0);
+        //         if (notices.length > 0) {
+        //             document.getElementById('notice-text').innerHTML = notices.join(' &nbsp;&nbsp;&nbsp;✦&nbsp;&nbsp;&nbsp; ');
+        //             document.getElementById('notice-bar').style.display = 'flex';
+        //         }
+        //     }).catch(err => console.log('Notice fetch error:', err));
+
+        buildUI();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 </body>
+
 </html>
