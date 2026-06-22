@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBSTU Bus Schedule</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="icon.png">
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js')); }</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
+  :root { --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --border: #334155; --text-main: #f8fafc; --text-muted: #94a3b8; --accent-blue: #3b82f6; --accent-green: #10b981; --accent-orange: #f59e0b; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; padding: 30px 20px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
+  h1 { font-size: 2rem; }
+  .nav-btn { display: inline-flex; padding: 6px 12px; background: rgba(59,130,246,0.15); color: var(--accent-blue); border-radius: 8px; text-decoration: none; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
+  .live-clock { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; }
+  .day-tabs { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 6px; margin-bottom: 24px; }
+  .tab { flex: 1; padding: 12px 0; background: transparent; color: var(--text-muted); border: none; font-weight: 600; cursor: pointer; border-radius: 8px; }
+  .tab.active { background: var(--surface); color: #fff; }
+  .schedule { display: none; flex-direction: column; gap: 12px; }
+  .schedule.visible { display: flex; }
+  .slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; align-items: center; }
+  .slot.active-now { border-color: var(--accent-orange); background: linear-gradient(90deg, rgba(245,158,11,0.08), transparent); }
+  .slot.active-return { border-color: var(--accent-green); background: linear-gradient(90deg, rgba(16,185,129,0.08), transparent); }
+  .slot.finished-slot { opacity: 0.5; }
+  .t-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+  .t-time { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; font-weight: 700; }
+  .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
+  .status-pill.now-city { background: var(--accent-orange); color: #000; }
+  .status-pill.now-campus { background: var(--accent-green); color: #000; }
+  .status-pill.upcoming { border: 1px solid var(--border); }
+  @media (max-width: 650px) { header { flex-direction: column; gap: 16px; } .slot { grid-template-columns: 1fr 1fr; gap: 16px; } .live-status { grid-column: 1/-1; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div><a href="index.html" class="nav-btn">← Back to Routine</a><h1>Bus Schedule</h1></div>
+    <div class="live-clock" id="clock">--:--</div>
+  </header>
+  <div class="day-tabs">
+    <button class="tab" id="tab-regular" onclick="setActiveTab('regular')">Regular (Sat-Wed)</button>
+    <button class="tab" id="tab-offday" onclick="setActiveTab('offday')">Off-Day (Thu-Fri)</button>
+  </div>
+  <div id="sched-regular" class="schedule"></div>
+  <div id="sched-offday" class="schedule"></div>
+</div>
+<script>
+const scheds = {
+  regular: [[8,0,8,30,3],[9,0,9,30,3],[10,0,10,30,2],[13,10,13,40,3],[14,30,15,0,4],[16,10,16,40,6],[17,15,17,45,4],[18,20,19,0,4],[20,10,20,50,3]],
+  offday: [[9,0,9,30,2],[14,30,15,0,3],[16,30,17,0,4],[18,0,19,0,2],[20,20,21,0,2]]
+};
+function pad(n){ return String(n).padStart(2,'0'); }
+function formatTime(h,m){ return `${h%12||12}:${pad(m)} ${h>=12?'PM':'AM'}`; }
+function getBDTime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"})); }
+function getTodayType() { const d = getBDTime().getDay(); return (d===4||d===5)?'offday':'regular'; }
+
+function buildSlot(data, i, type) {
+  const [cH, cM, tH, tM, bCount] = data;
+  const div = document.createElement('div'); div.className = 'slot'; div.dataset.type = type;
+  div.dataset.c = (cH*3600)+(cM*60); div.dataset.t = (tH*3600)+(tM*60); div.dataset.e = (tH*3600)+(tM*60)+2100;
+  div.innerHTML = `<div><div class="t-label">Departs Campus</div><div class="t-time">${formatTime(cH,cM)}</div></div><div><div class="t-label">Departs City</div><div class="t-time">${formatTime(tH,tM)}</div></div><div><div class="t-label">Trip ${i+1}</div><div style="font-size:0.75rem">${bCount} Buses</div></div><div class="live-status"></div>`;
+  return div;
+}
+
+function setActiveTab(type) {
+  document.getElementById('tab-regular').classList.toggle('active', type==='regular');
+  document.getElementById('tab-offday').classList.toggle('active', type==='offday');
+  document.getElementById('sched-regular').classList.toggle('visible', type==='regular');
+  document.getElementById('sched-offday').classList.toggle('visible', type==='offday');
+}
+
+function updateStatus() {
+  const now = getBDTime(), nowSecs = (now.getHours()*3600)+(now.getMinutes()*60)+now.getSeconds();
+  document.getElementById('clock').textContent = formatTime(now.getHours(), now.getMinutes());
+  document.querySelectorAll('.slot').forEach(s => {
+    if(s.dataset.type !== getTodayType()) { s.className='slot'; s.querySelector('.live-status').innerHTML='<span class="status-pill upcoming">Inactive</span>'; return; }
+    const c=parseInt(s.dataset.c), t=parseInt(s.dataset.t), e=parseInt(s.dataset.e), stat=s.querySelector('.live-status');
+    if(nowSecs>=e) { s.className='slot finished-slot'; stat.innerHTML='<span class="status-pill upcoming">Finished</span>'; }
+    else if(nowSecs>=t) { s.className='slot active-return'; stat.innerHTML='<span class="status-pill now-campus">Returning</span>'; }
+    else if(nowSecs>=c) { s.className='slot active-now'; stat.innerHTML='<span class="status-pill now-city">To City</span>'; }
+    else { s.className='slot'; stat.innerHTML='<span class="status-pill upcoming">Upcoming</span>'; }
+  });
+}
+
+scheds.regular.forEach((s,i)=>document.getElementById('sched-regular').appendChild(buildSlot(s,i,'regular')));
+scheds.offday.forEach((s,i)=>document.getElementById('sched-offday').appendChild(buildSlot(s,i,'offday')));
+setActiveTab(getTodayType()); setInterval(updateStatus, 1000); updateStatus();
+</script>
+</body>
+</html>
