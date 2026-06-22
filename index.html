@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICT-20 Class Routine</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="icon.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error: ', err));
+    });
+  }
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --card-hover: #162032; --border: #334155;
+    --accent-blue: #3b82f6; --accent-purple: #8b5cf6; --accent-green: #10b981; 
+    --accent-orange: #f59e0b; --accent-pink: #ec4899; --accent-teal: #06b6d4;
+    --text-main: #f8fafc; --text-muted: #94a3b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 30px 20px 40px; }
+  body::before { content: ''; position: fixed; top: -250px; left: -250px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 60%); z-index: -1; }
+  .container { max-width: 900px; margin: 0 auto; position: relative; }
+  
+  header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .title-block h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
+  .title-block p { font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; margin-top: 4px; text-transform: uppercase; }
+  .nav-buttons { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-decoration: none; transition: all 0.2s; }
+  .nav-btn.bus { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .nav-btn.bus:hover { background: var(--accent-green); color: #000; }
+  .nav-btn.cal { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border: 1px solid rgba(139, 92, 246, 0.3); }
+  .nav-btn.cal:hover { background: var(--accent-purple); color: #fff; }
+  .nav-btn.tgt { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .nav-btn.tgt:hover { background: var(--accent-orange); color: #000; }
+  
+  .live-clock { text-align: right; }
+  .live-clock .time { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
+  .live-clock .day-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-top: 2px; }
+  
+  .notice-bar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-bottom: 24px; display: none; overflow: hidden; align-items: stretch; }
+  .notice-label { background: var(--accent-orange); color: #000; font-weight: 800; font-size: 0.7rem; padding: 10px 16px; text-transform: uppercase; z-index: 2; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
+  .marquee-wrapper { flex: 1; overflow: hidden; display: flex; align-items: center; }
+  .marquee-text { white-space: nowrap; font-weight: 600; font-size: 0.85rem; color: var(--accent-orange); animation: marquee 20s linear infinite; padding-left: 100%; }
+  @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+  
+  .today-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+  .today-badge { background: var(--accent-blue); color: #fff; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 5px 12px; border-radius: 6px; }
+  .today-info { font-size: 0.95rem; color: var(--text-main); font-weight: 500; }
+  .today-info span { color: var(--text-muted); }
+  
+  .day-tabs { display: flex; background: var(--card); padding: 6px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
+  .tab { flex: 1; padding: 10px 0; background: transparent; border: none; border-radius: 8px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; position: relative; }
+  .tab.active { background: var(--surface); color: #fff; }
+  .tab.is-today { color: var(--accent-green); }
+  .tab.active.is-today { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16,185,129,0.2); }
+  .tab.is-today::after { content: ''; position: absolute; top: 6px; right: 8px; width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; }
+  
+  .schedule { display: none; flex-direction: column; gap: 12px; }
+  .schedule.visible { display: flex; }
+  .slot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; display: grid; grid-template-columns: 90px 80px 1fr 120px; align-items: center; gap: 20px; transition: all 0.25s; }
+  .slot.active-now { border-color: var(--accent-green); background: linear-gradient(90deg, rgba(16,185,129,0.08) 0%, var(--card) 100%); transform: scale(1.02); }
+  .slot.active-now::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 4px; background: var(--accent-green); border-radius: 4px 0 0 4px; }
+  .slot.finished-slot { opacity: 0.4; }
+  .slot.break-slot { border-style: dashed; background: rgba(30, 41, 59, 0.3); }
+  
+  .time-col { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
+  .time-col .t-start { color: var(--text-main); font-size: 0.9rem; font-weight: 600; }
+  .subject-tag { padding: 6px 0; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-align: center; }
+  .subject-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+  .subject-type { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+  
+  .live-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .status-pill { font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+  .status-pill.now { background: var(--accent-green); color: #000; animation: pulse 2s infinite; }
+  .status-pill.upcoming { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+  .status-pill.finished { border: 1px solid var(--border); color: var(--text-muted); }
+  .rem-time { font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  .rem-time.muted { color: var(--text-muted); }
+  @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129, 0.4); } 50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(16,185,129, 0); } }
+  
+  .c-dsp { background: rgba(59,130,246,0.15); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.2); }
+  .c-cn { background: rgba(139,92,246,0.15); color: var(--accent-purple); border: 1px solid rgba(139,92,246,0.2); }
+  .c-wad { background: rgba(16,185,129,0.15); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.2); }
+  .c-stat { background: rgba(245,158,11,0.15); color: var(--accent-orange); border: 1px solid rgba(245,158,11,0.2); }
+  .c-eth { background: rgba(236,72,153,0.15); color: var(--accent-pink); border: 1px solid rgba(236,72,153,0.2); }
+  .c-mbs { background: rgba(6,182,212,0.15); color: var(--accent-teal); border: 1px solid rgba(6,182,212,0.2); }
+  .c-break { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+  
+  .credit-wrapper { display: flex; justify-content: center; margin-top: 50px; padding-bottom: 20px; }
+  .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+  .credit-pill span.name { font-weight: 700; color: var(--accent-blue); }
+  
+  @media (max-width: 650px) {
+    header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .live-clock { width: 100%; display: flex; justify-content: space-between; align-items: baseline; }
+    .slot { grid-template-columns: 1fr; gap: 12px; padding: 16px; }
+    .time-col { display: flex; gap: 12px; align-items: baseline; }
+    .subject-tag { width: auto; display: inline-block; padding: 4px 12px; }
+    .live-status { flex-direction: row-reverse; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="title-block">
+      <div class="nav-buttons">
+        <a href="bus.html" class="nav-btn bus">🚌 Bus Schedule</a>
+        <a href="calendar.html" class="nav-btn cal">📅 Calendar</a>
+        <a href="target.html" class="nav-btn tgt">🎯 Grade Target</a>
+      </div>
+      <h1>Class Routine</h1>
+      <p>ICT-20 · Semester Schedule</p>
+    </div>
+    <div class="live-clock">
+      <div class="time" id="clock">--:--:-- --</div>
+      <div class="day-label" id="clock-day">Loading...</div>
+    </div>
+  </header>
+
+  <div class="notice-bar" id="notice-bar">
+    <div class="notice-label">Alert</div>
+    <div class="marquee-wrapper"><div class="marquee-text" id="notice-text"></div></div>
+  </div>
+
+  <div class="today-banner" id="today-banner">
+    <span class="today-badge">Today</span>
+    <div class="today-info" id="today-info">Loading schedule...</div>
+  </div>
+
+  <div class="day-tabs" id="day-tabs"></div>
+  <div id="schedules-container"></div>
+
+  <div class="credit-wrapper">
+    <div class="credit-pill">
+      <div>Crafted by <span class="name">Sajeeb Khan</span></div>
+      <div style="width:1px; background:var(--border);"></div>
+      <div>Conceptualized by <span style="color:var(--accent-teal); font-weight:700;">Mahfuzur</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const schedule = {
+  Saturday: [[10,40,12,15,'CN','c-cn','Lecture'], [12,20,13,5,'MBS','c-mbs','Lecture'], [13,5,14,0,'BREAK','c-break','Break'], [14,0,15,40,'Ethics','c-eth','Lecture']],
+  Sunday: [[9,50,10,35,'DSP','c-dsp','Lecture'], [10,40,12,15,'DSP Lab','c-dsp','Lab'], [12,20,13,5,'STAT','c-stat','Lecture'], [13,5,14,0,'BREAK','c-break','Break'], [14,0,15,40,'CN Lab','c-cn','Lab']],
+  Monday: [[9,50,10,35,'WAD','c-wad','Lecture'], [10,40,12,15,'DSP Lab','c-dsp','Lab'], [13,5,14,0,'BREAK','c-break','Break'], [14,0,15,40,'RM Lab','c-stat','Lab']],
+  Tuesday: [[9,50,11,25,'WAD','c-wad','Lecture'], [11,30,12,15,'CN','c-cn','Lecture'], [13,5,14,0,'BREAK','c-break','Break'], [14,0,15,40,'STAT','c-stat','Lecture']],
+  Wednesday: [[10,40,12,15,'WAD Lab','c-wad','Lab'], [13,5,14,0,'BREAK','c-break','Break']],
+  Thursday: [], Friday: []
+};
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function formatTime(h,m){ return `${h%12||12}:${pad(m)} ${h>=12?'PM':'AM'}`; }
+function getWeekDayIndex(jsDay) { return (jsDay + 1) % 7; }
+function getBDTime() { return new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"})); }
+function getCurrentWeekSecs() { const now=getBDTime(); return (getWeekDayIndex(now.getDay())*86400)+(now.getHours()*3600)+(now.getMinutes()*60)+now.getSeconds(); }
+function formatCountdown(sec) { const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60; return `${h>0?h+'h ':''}${m>0||h>0?pad(m)+'m ':''}${pad(s)}s`; }
+
+function buildSlot(slot, day){
+  const [sh,sm,eh,em,subj,cls,type] = slot;
+  const isBreak = subj === 'BREAK';
+  const dIdx = getWeekDayIndex(DAYS.indexOf(day));
+  const sSec = (dIdx*86400)+(sh*3600)+(sm*60), eSec = (dIdx*86400)+(eh*3600)+(em*60);
+  
+  const div = document.createElement('div');
+  div.className = `slot ${isBreak ? 'break-slot' : ''}`;
+  div.dataset.weekStart = sSec; div.dataset.weekEnd = eSec;
+  div.innerHTML = `<div class="time-col"><div class="t-start">${formatTime(sh,sm)}</div><div>→ ${formatTime(eh,em)}</div></div><div class="subject-tag ${cls}">${subj}</div><div class="subject-info"><div class="subject-name">${isBreak?'Break Time':subj}</div><div class="subject-type">${type} · ${(eSec-sSec)/60} mins</div></div><div class="live-status"></div>`;
+  return div;
+}
+
+function renderDay(day){
+  const container = document.createElement('div'); container.className = 'schedule'; container.id = `sched-${day}`;
+  if(!schedule[day].length) { container.innerHTML = `<div style="text-align:center; padding:60px 20px; color:var(--text-muted); font-weight:500;"><div style="font-size:3rem; opacity:0.5;">☕</div>No classes scheduled.</div>`; return container; }
+  schedule[day].forEach((slot, i) => { const el = buildSlot(slot, day); el.style.animationDelay = `${i*50}ms`; container.appendChild(el); });
+  return container;
+}
+
+function setActiveTab(day){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.day === day));
+  document.querySelectorAll('.schedule').forEach(s => s.classList.toggle('visible', s.id === `sched-${day}`));
+}
+
+function buildUI(){
+  const today = DAYS[getBDTime().getDay()];
+  const tabsEl = document.getElementById('day-tabs');
+  ['Saturday','Sunday','Monday','Tuesday','Wednesday'].forEach(day => {
+    const tab = document.createElement('button'); tab.className = `tab ${day===today?'is-today':''}`; tab.dataset.day = day; tab.textContent = day.slice(0,3);
+    tab.onclick = () => setActiveTab(day); tabsEl.appendChild(tab);
+    document.getElementById('schedules-container').appendChild(renderDay(day));
+  });
+  setActiveTab(['Thursday','Friday'].includes(today) ? 'Saturday' : today);
+}
+
+function updateLiveStatus() {
+  const nowSecs = getCurrentWeekSecs();
+  document.querySelectorAll('.slot').forEach(slot => {
+    const start = parseInt(slot.dataset.weekStart), end = parseInt(slot.dataset.weekEnd);
+    const statusDiv = slot.querySelector('.live-status');
+    if (nowSecs >= end) { slot.classList.remove('active-now'); slot.classList.add('finished-slot'); statusDiv.innerHTML = `<span class="status-pill finished">Finished</span>`; }
+    else if (nowSecs >= start) { slot.classList.add('active-now'); slot.classList.remove('finished-slot'); statusDiv.innerHTML = `<span class="status-pill now">NOW</span><div class="rem-time">${formatCountdown(end-nowSecs)}</div>`; }
+    else { slot.classList.remove('active-now', 'finished-slot'); statusDiv.innerHTML = `<span class="status-pill upcoming">Upcoming</span><div class="rem-time muted">${formatCountdown(start-nowSecs)}</div>`; }
+  });
+}
+
+function updateClock(){
+  const now = getBDTime();
+  document.getElementById('clock').textContent = formatTime(now.getHours(), now.getMinutes()).replace(' ', `:${pad(now.getSeconds())} `);
+  document.getElementById('clock-day').textContent = DAYS[now.getDay()];
+  updateLiveStatus();
+}
+
+const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMv9q_3Dw0nNvFHRAznaIgz-J5N7Ntq-vYIuX7mh2Vin9UybNgvhMJOAQDAEurxr6u4PdZSbtC3Ggw/pub?output=csv';
+fetch(sheetUrl + '&t=' + new Date().getTime()).then(res => res.text()).then(csv => {
+  const notices = csv.split('\n').map(r => r.trim().replace(/^"|"$/g, '')).filter(r => r.length > 0);
+  if (notices.length) { document.getElementById('notice-text').innerHTML = notices.join(' &nbsp;&nbsp;&nbsp;✦&nbsp;&nbsp;&nbsp; '); document.getElementById('notice-bar').style.display = 'flex'; }
+});
+
+buildUI(); setInterval(updateClock, 1000); updateClock();
+</script>
+</body>
+</html>
