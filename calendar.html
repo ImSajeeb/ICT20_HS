@@ -1,72 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MBSTU Calendar</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<link rel="icon" href="icon.png">
-<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js')); }</script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600;700&display=swap');
-  :root { --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --border: #334155; --text-main: #f8fafc; --text-muted: #94a3b8; --accent-blue: #3b82f6; --accent-green: #10b981; --accent-red: #ef4444; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; padding: 30px 20px; }
-  .container { max-width: 1100px; margin: 0 auto; }
-  header { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
-  h1 { font-size: 2rem; }
-  .nav-btn { display: inline-flex; padding: 6px 12px; background: rgba(59,130,246,0.15); color: var(--accent-blue); border-radius: 8px; text-decoration: none; font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
-  .month { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .m-head { text-align: center; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 4px; }
-  .d-name { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-bottom: 8px; }
-  .d-cell { padding: 8px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; border-radius: 6px; }
-  .off { color: var(--accent-red); }
-  .hol { background: rgba(239,68,68,0.15); color: var(--accent-red); cursor: help; border: 1px solid rgba(239,68,68,0.3); }
-  .today { background: var(--accent-green); color: #000; font-weight: 800; transform: scale(1.1); box-shadow: 0 0 10px rgba(16,185,129,0.5); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBSTU Academic Calendar 2026</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icon.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --card-hover: #162032; --border: #334155;
+            --accent-blue: #3b82f6; --accent-purple: #8b5cf6; --accent-green: #10b981;
+            --accent-orange: #f59e0b; --accent-teal: #06b6d4; --accent-red: #ef4444; --accent-pink: #ec4899;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 30px 20px 60px; overflow-y: scroll; -webkit-font-smoothing: antialiased; }
+        body::before { content: ''; position: fixed; top: -250px; left: -250px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 60%); pointer-events: none; z-index: -1; }
+        .container { max-width: 1100px; margin: 0 auto; position: relative; }
+
+        /* UNIVERSAL NAVIGATION BAR */
+        .nav-buttons { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; font-family: 'Inter', sans-serif;}
+        
+        .nav-btn.routine { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border-color: rgba(59, 130, 246, 0.3); }
+        .nav-btn.routine:hover { background: var(--accent-blue); color: #fff; }
+        .nav-btn.bus { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); }
+        .nav-btn.bus:hover { background: var(--accent-green); color: #000; }
+        .nav-btn.cal { background: var(--accent-purple); color: #fff; border-color: var(--accent-purple); } /* Active State */
+        .nav-btn.tgt { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); border-color: rgba(245, 158, 11, 0.3); }
+        .nav-btn.tgt:hover { background: var(--accent-orange); color: #000; }
+        
+        /* PWA Install Button */
+        .nav-btn.install { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); border-color: rgba(236, 72, 153, 0.3); display: none; }
+        .nav-btn.install:hover { background: var(--accent-pink); color: #fff; }
+
+        /* HEADER */
+        header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .title-block h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
+        .title-block p { font-size: 0.85rem; color: var(--accent-purple); font-weight: 600; margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .live-clock { text-align: right; }
+        .live-clock .time { font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; font-weight: 800; color: var(--text-main); letter-spacing: 1px; }
+        .live-clock .day-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1.5px; margin-top: 2px; }
+
+        /* TODAY BANNER */
+        .today-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 24px; margin-bottom: 28px; display: flex; align-items: center; gap: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
+        .today-badge { background: var(--accent-purple); color: #fff; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 5px 12px; border-radius: 6px; }
+        .today-info { font-size: 0.95rem; color: var(--text-main); font-weight: 500; }
+        .holiday-countdown { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-orange); font-weight: 700; background: rgba(245, 158, 11, 0.1); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        /* CALENDAR GRID */
+        .calendar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .month-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+        .month-header { font-size: 1.1rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; text-align: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+        .day-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; }
+        .day-name.off-day { color: var(--accent-red); }
+        .date-cell { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; padding: 8px 0; border-radius: 6px; color: var(--text-main); display: flex; justify-content: center; align-items: center; position: relative; cursor: default; transition: all 0.2s; }
+        .date-cell.empty { color: transparent; pointer-events: none; }
+        .date-cell.off-day { color: var(--accent-red); }
+        .date-cell.holiday { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); cursor: help; }
+        .date-cell.holiday:hover { background: var(--accent-red); color: #fff; transform: scale(1.1); z-index: 5; }
+        .date-cell.today { background: var(--accent-green); color: #000 !important; font-weight: 800; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5); transform: scale(1.1); z-index: 10; border: none; }
+
+        /* LEGEND */
+        .legend { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-top: 20px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* FOOTER */
+        .credit-wrapper { display: flex; justify-content: center; margin-top: 40px; padding-bottom: 20px; }
+        .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+        .credit-pill:hover { border-color: #475569; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25); transform: translateY(-2px); }
+        .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 650px) {
+            header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .live-clock { width: 100%; display: flex; justify-content: space-between; align-items: baseline; }
+            .today-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .holiday-countdown { margin-left: 0; width: 100%; text-align: center; }
+            .credit-pill { flex-direction: column; gap: 8px; padding: 14px 24px; border-radius: 16px; }
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div><a href="index.html" class="nav-btn">← Back to Routine</a><h1>MBSTU 2026</h1></div>
-    <div id="next-hol" style="text-align:right; color:var(--accent-red); font-weight:700;">Loading...</div>
-  </header>
-  <div class="grid" id="cal"></div>
-</div>
-<script>
-const hols = [
-  {m:0,d:17,n:"Shab-e-Meraj"}, {m:0,d:23,n:"Saraswati Puja"}, {m:1,d:4,n:"Shab-e-Barat"}, {m:1,d:21,n:"Mother Language Day"},
-  ...Array.from({length:14},(_,i)=>({m:2,d:12+i,n:"Eid-ul-Fitr Vacation"})), {m:2,d:26,n:"Independence Day"},
-  {m:3,d:5,n:"Easter"}, {m:3,d:14,n:"Nabobarsho"}, {m:4,d:1,n:"May Day"},
-  ...Array.from({length:11},(_,i)=>({m:4,d:21+i,n:"Summer Vacation"})), ...Array.from({length:6},(_,i)=>({m:5,d:1+i,n:"Summer Vacation"})),
-  {m:6,d:15,n:"Mourning Day"}, {m:7,d:26,n:"Janmashtami"}, {m:8,d:28,n:"Eid-e-Miladunnabi"},
-  ...Array.from({length:4},(_,i)=>({m:9,d:18+i,n:"Durga Puja"})), {m:11,d:16,n:"Victory Day"},
-  ...Array.from({length:11},(_,i)=>({m:11,d:21+i,n:"Winter Vacation"}))
-];
-const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Dhaka"}));
+    <div class="container">
 
-for(let m=0; m<12; m++) {
-  const card = document.createElement('div'); card.className = 'month';
-  card.innerHTML = `<div class="m-head">${mNames[m]}</div><div class="days" id="d-${m}"></div>`;
-  document.getElementById('cal').appendChild(card);
-  const grid = document.getElementById(`d-${m}`);
-  ["S","S","M","T","W","T","F"].forEach((n,i)=>grid.innerHTML+=`<div class="d-name ${i>4?'off':''}">${n}</div>`);
-  const start = (new Date(2026, m, 1).getDay()+1)%7;
-  for(let i=0; i<start; i++) grid.innerHTML+=`<div></div>`;
-  const days = new Date(2026, m+1, 0).getDate();
-  for(let d=1; d<=days; d++) {
-    const idx = (start+d-1)%7;
-    const h = hols.find(x=>x.m===m&&x.d===d);
-    let cls = `d-cell ${idx>4?'off':''}`;
-    if(h) cls += ' hol';
-    if(now.getFullYear()===2026&&now.getMonth()===m&&now.getDate()===d) cls += ' today';
-    grid.innerHTML+=`<div class="${cls}" title="${h?h.n:''}">${d}</div>`;
-  }
-}
-</script>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn routine">📅 Routine</a>
+            <a href="bus.html" class="nav-btn bus">🚌 Bus</a>
+            <a href="calendar.html" class="nav-btn cal">📆 Calendar</a>
+            <a href="target.html" class="nav-btn tgt">🎯 Grade</a>
+            <button id="install-btn" class="nav-btn install">📱 Install App</button>
+        </div>
+
+        <header>
+            <div class="title-block">
+                <h1>Academic Calendar</h1>
+                <p>MBSTU · 2026</p>
+            </div>
+            <div class="live-clock">
+                <div class="time" id="clock">--:--:-- --</div>
+                <div class="day-label" id="clock-day">Loading...</div>
+            </div>
+        </header>
+
+        <div class="today-banner" id="today-banner">
+            <span class="today-badge">Today</span>
+            <div class="today-info" id="today-info">Loading date...</div>
+            <div class="holiday-countdown" id="next-holiday">Scanning Holidays...</div>
+        </div>
+
+        <div class="calendar-grid" id="calendar-grid">
+            </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background: var(--text-main)"></div>Class Day</div>
+            <div class="legend-item"><div class="legend-dot" style="background: transparent; border: 2px solid var(--accent-red)"></div>Weekend (Thu-Fri)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: rgba(239, 68, 68, 0.3); border: 2px solid var(--accent-red)"></div>Class Holiday / Vacation</div>
+            <div class="legend-item"><div class="legend-dot" style="background: var(--accent-green); box-shadow: 0 0 8px rgba(16,185,129,0.5);"></div>Today</div>
+        </div>
+
+        <div class="credit-wrapper">
+            <div class="credit-pill">
+                <div>Crafted by <span class="name">Sajeeb Khan</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // PWA INSTALL LOGIC
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-flex';
+        });
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { installBtn.style.display = 'none'; }
+                deferredPrompt = null;
+            }
+        });
+
+        const holidayList = [
+            { m: 0, d: 17, name: "Shab-e-Meraj" },
+            { m: 0, d: 23, name: "Sree Sree Saraswati Puja" },
+            { m: 1, d: 4, name: "Shab-e-Barat" },
+            { m: 1, d: 21, name: "Martyr's Day & Int'l Mother Language Day" },
+            ...Array.from({ length: 14 }, (_, i) => ({ m: 2, d: 12 + i, name: "Ramadan & Eid-ul-Fitr Vacation" })),
+            { m: 2, d: 26, name: "Independence Day" },
+            { m: 3, d: 5, name: "Easter Sunday" },
+            { m: 3, d: 14, name: "Bangla Nabobarsho" },
+            { m: 4, d: 1, name: "May Day & Buddha Purnima" },
+            ...Array.from({ length: 11 }, (_, i) => ({ m: 4, d: 21 + i, name: "Eid-ul-Adha & Summer Vacation" })),
+            ...Array.from({ length: 2 }, (_, i) => ({ m: 5, d: 1 + i, name: "Eid-ul-Adha & Summer Vacation" })),
+            { m: 5, d: 26, name: "Ashura (Muharram)" },
+            ...Array.from({ length: 4 }, (_, i) => ({ m: 5, d: 27 + i, name: "Summer Vacation" })),
+            { m: 6, d: 1, name: "Summer Vacation" },
+            { m: 7, d: 15, name: "National Mourning Day" },
+            { m: 7, d: 26, name: "Janmashtami" },
+            { m: 8, d: 28, name: "Eid-e-Miladunnabi" },
+            ...Array.from({ length: 4 }, (_, i) => ({ m: 9, d: 18 + i, name: "Durga Puja" })),
+            { m: 11, d: 16, name: "Victory Day" },
+            ...Array.from({ length: 11 }, (_, i) => ({ m: 11, d: 21 + i, name: "Winter Vacation & Christmas" }))
+        ];
+
+        const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const DAYS_HEADER = ["S", "S", "M", "T", "W", "T", "F"];
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+        function getBDTime() { return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Dhaka" })); }
+        function getGridDayIndex(jsDay) { return (jsDay + 1) % 7; }
+
+        function getHoliday(m, d) { return holidayList.find(h => h.m === m && h.d === d); }
+
+        function generateCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const now = getBDTime();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            const currentDate = now.getDate();
+            const displayYear = 2026; 
+
+            for (let m = 0; m < 12; m++) {
+                const card = document.createElement('div');
+                card.className = 'month-card';
+
+                const header = document.createElement('div');
+                header.className = 'month-header';
+                header.textContent = MONTHS[m];
+                card.appendChild(header);
+
+                const daysGrid = document.createElement('div');
+                daysGrid.className = 'days-grid';
+
+                DAYS_HEADER.forEach((day, index) => {
+                    const el = document.createElement('div');
+                    el.className = `day-name ${index === 5 || index === 6 ? 'off-day' : ''}`;
+                    el.textContent = day;
+                    daysGrid.appendChild(el);
+                });
+
+                const daysInMonth = new Date(displayYear, m + 1, 0).getDate();
+                const firstDayJs = new Date(displayYear, m, 1).getDay();
+                const startingGridIndex = getGridDayIndex(firstDayJs);
+
+                for (let i = 0; i < startingGridIndex; i++) {
+                    const el = document.createElement('div');
+                    el.className = 'date-cell empty';
+                    daysGrid.appendChild(el);
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const el = document.createElement('div');
+                    const gridIndex = (startingGridIndex + d - 1) % 7;
+
+                    let classes = ['date-cell'];
+                    if (gridIndex === 5 || gridIndex === 6) classes.push('off-day');
+
+                    const holidayData = getHoliday(m, d);
+                    if (holidayData) {
+                        classes.push('holiday');
+                        el.title = holidayData.name; 
+                    }
+
+                    if (displayYear === currentYear && m === currentMonth && d === currentDate) {
+                        classes.push('today');
+                    }
+
+                    el.className = classes.join(' ');
+                    el.textContent = d;
+                    daysGrid.appendChild(el);
+                }
+                card.appendChild(daysGrid);
+                grid.appendChild(card);
+            }
+        }
+
+        function updateTopBanner() {
+            const now = getBDTime();
+            const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+            const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            document.getElementById('today-info').innerHTML = `<strong>${dateStr}</strong>`;
+
+            let nextHol = null;
+            for (let h of holidayList) {
+                const holDate = new Date(2026, h.m, h.d).getTime();
+                if (holDate >= todayZero) {
+                    if (!nextHol || holDate < nextHol.dateTs) {
+                        nextHol = { ...h, dateTs: holDate };
+                    }
+                }
+            }
+
+            const holidayDisplay = document.getElementById('next-holiday');
+            if (now.getFullYear() > 2026) {
+                holidayDisplay.textContent = "Calendar is for 2026 only.";
+            } else if (nextHol) {
+                const diffTime = Math.abs(nextHol.dateTs - todayZero);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 0) {
+                    holidayDisplay.textContent = `🎉 Today is: ${nextHol.name}`;
+                    holidayDisplay.style.background = 'rgba(16, 185, 129, 0.15)';
+                    holidayDisplay.style.color = 'var(--accent-green)';
+                    holidayDisplay.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                    holidayDisplay.textContent = `Next Holiday: ${nextHol.name} (in ${diffDays} days)`;
+                }
+            } else {
+                holidayDisplay.textContent = "No more holidays in 2026!";
+            }
+        }
+
+        function updateClock() {
+            const now = getBDTime();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let h = now.getHours();
+            const m = pad(now.getMinutes());
+            const s = pad(now.getSeconds());
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12; h = h ? h : 12;
+
+            document.getElementById('clock').textContent = `${pad(h)}:${m}:${s} ${ampm}`;
+            document.getElementById('clock-day').textContent = days[now.getDay()];
+        }
+
+        generateCalendar();
+        updateTopBanner();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 </body>
 </html>
