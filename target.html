@@ -1,243 +1,351 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Target Grade Forecaster</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f172a">
-<link rel="icon" href="icon.png">
-<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('sw.js')); }</script>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Calculator</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="icon" href="icon.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
 
-  :root {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --card: #0b1121;
-    --card-hover: #162032;
-    --border: #334155;
-    
-    --accent-blue: #3b82f6;
-    --accent-purple: #8b5cf6;
-    --accent-green: #10b981;
-    --accent-orange: #f59e0b;
-    --accent-red: #ef4444;
-    --accent-teal: #06b6d4;
-    
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-  }
+        :root {
+            --bg: #0f172a; --surface: #1e293b; --card: #0b1121; --border: #334155;
+            --accent-blue: #3b82f6; --accent-purple: #8b5cf6; --accent-green: #10b981;
+            --accent-orange: #f59e0b; --accent-red: #ef4444; --accent-teal: #06b6d4; --accent-pink: #ec4899;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+        }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; min-height: 100vh; padding: 30px 20px 60px; -webkit-font-smoothing: antialiased; }
+        body::before { content: ''; position: fixed; top: -250px; left: -250px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 60%); pointer-events: none; z-index: -1; }
+        .container { max-width: 700px; margin: 0 auto; position: relative; }
 
-  body {
-    background: var(--bg);
-    color: var(--text-main);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    padding: 30px 20px 60px;
-    -webkit-font-smoothing: antialiased;
-  }
+        /* UNIVERSAL NAVIGATION BAR */
+        .nav-buttons { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+        .nav-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; cursor: pointer; font-family: 'Inter', sans-serif;}
+        
+        .nav-btn.routine { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border-color: rgba(59, 130, 246, 0.3); }
+        .nav-btn.routine:hover { background: var(--accent-blue); color: #fff; }
+        .nav-btn.bus { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border-color: rgba(16, 185, 129, 0.3); }
+        .nav-btn.bus:hover { background: var(--accent-green); color: #000; }
+        .nav-btn.cal { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); border-color: rgba(139, 92, 246, 0.3); } 
+        .nav-btn.cal:hover { background: var(--accent-purple); color: #fff; }
+        .nav-btn.tgt { background: var(--accent-orange); color: #000; border-color: var(--accent-orange); } 
+        
+        .nav-btn.install { background: rgba(236, 72, 153, 0.15); color: var(--accent-pink); border-color: rgba(236, 72, 153, 0.3); display: none; }
+        .nav-btn.install:hover { background: var(--accent-pink); color: #fff; }
 
-  body::before {
-    content: '';
-    position: fixed;
-    top: -250px; left: -250px;
-    width: 700px; height: 700px;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.05) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: -1;
-  }
+        /* HEADER */
+        header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .title-block h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
+        .title-block p { font-size: 0.85rem; color: var(--accent-orange); font-weight: 600; margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
 
-  .container { max-width: 600px; margin: 0 auto; position: relative; }
+        /* INTERNAL TABS */
+        .day-tabs { display: flex; background: var(--card); padding: 6px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
+        .tab { flex: 1; padding: 12px 0; background: transparent; border: none; border-radius: 8px; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .tab.active { background: var(--surface); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-  /* HEADER */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--border);
-  }
+        .tool-section { display: none; }
+        .tool-section.visible { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .title-block h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -0.5px; color: #fff; }
-  .title-block p { font-size: 0.85rem; color: var(--accent-orange); font-weight: 600; margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+        /* CALCULATOR CARDS */
+        .calc-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); margin-bottom: 24px; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .input-group label span { color: var(--accent-teal); }
+        .input-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .input-row > div { flex: 1; margin-bottom: 0; }
+        input[type="number"], input[type="text"], select { width: 100%; background: var(--surface); border: 1px solid var(--border); color: #fff; padding: 12px 16px; border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 700; transition: border-color 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--accent-orange); }
+        
+        .total-internal-badge { text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--accent-green); color: var(--accent-green); padding: 12px; border-radius: 8px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 1rem; margin-top: 20px; }
 
-  .nav-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);
-    border: 1px solid rgba(59, 130, 246, 0.3); padding: 6px 14px;
-    border-radius: 8px; font-size: 0.75rem; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px; text-decoration: none;
-    transition: all 0.2s;
-  }
-  .nav-btn:hover { background: var(--accent-blue); color: #fff; transform: translateY(-2px); }
+        /* FORECASTER RESULTS GRID */
+        .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .grade-badge { font-size: 1.1rem; font-weight: 800; font-family: 'Inter', sans-serif; }
+        .target-score { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; }
 
-  /* CALCULATOR CARD */
-  .calc-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    margin-bottom: 24px;
-  }
+        /* CGPA SECTION */
+        .cgpa-headers { display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 10px; margin-bottom: 12px; padding: 0 4px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .course-row { display: grid; grid-template-columns: 2fr 1fr 1fr 40px; gap: 10px; align-items: center; margin-bottom: 12px; }
+        .del-btn { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .del-btn:hover { background: var(--accent-red); color: #fff; }
+        .add-row-btn { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); border: 1px dashed var(--accent-blue); width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+        .add-row-btn:hover { background: var(--accent-blue); color: #fff; }
+        
+        .gpa-result-box { display: flex; flex-direction: column; gap: 12px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.15)); border: 1px solid var(--accent-green); padding: 20px; border-radius: 12px; text-align: center; margin-top: 24px; }
+        .gpa-title { font-size: 0.85rem; color: var(--text-main); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .gpa-value { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
+        .cumulative-gpa { font-size: 1rem; color: var(--accent-teal); font-weight: 600; }
 
-  .input-group { margin-bottom: 20px; }
-  .input-group label {
-    display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
-    margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
-  }
-  .input-group label span { color: var(--accent-teal); }
-  
-  .input-row { display: flex; gap: 16px; margin-bottom: 20px; }
-  .input-row > div { flex: 1; margin-bottom: 0; }
+        /* Status Colors */
+        .c-aplus { color: var(--accent-blue); } .c-a { color: var(--accent-teal); } .c-aminus { color: var(--accent-green); }
+        .c-bplus { color: #84cc16; } .c-b { color: var(--accent-orange); } .c-bminus { color: #facc15; }
+        .c-cplus { color: #fb923c; } .c-c { color: #f87171; } .c-d { color: var(--accent-pink); }
+        .status-impossible { color: var(--accent-red); font-size: 0.85rem; font-weight: 700; text-align: right; }
+        .status-secured { color: var(--accent-green); font-size: 0.85rem; font-weight: 700; }
 
-  input[type="number"] {
-    width: 100%; background: var(--surface); border: 1px solid var(--border);
-    color: #fff; padding: 12px 16px; border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700;
-    transition: border-color 0.2s;
-  }
-  input[type="number"]:focus { outline: none; border-color: var(--accent-orange); }
+        /* FOOTER */
+        .credit-wrapper { display: flex; justify-content: center; margin-top: 40px; padding-bottom: 20px; }
+        .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; color: var(--accent-blue); }
 
-  .total-internal-badge {
-    text-align: center; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--accent-green);
-    color: var(--accent-green); padding: 12px; border-radius: 8px; font-weight: 700;
-    font-family: 'JetBrains Mono', monospace; font-size: 1rem;
-  }
-
-  /* RESULTS GRID */
-  .results-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  }
-
-  .result-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 16px; display: flex; justify-content: space-between;
-    align-items: center; transition: all 0.2s;
-  }
-
-  .grade-badge { font-size: 1.2rem; font-weight: 800; font-family: 'Inter', sans-serif; }
-  .target-score { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; }
-
-  /* Status Colors */
-  .c-aplus { color: var(--accent-blue); }
-  .c-a { color: var(--accent-teal); }
-  .c-aminus { color: var(--accent-green); }
-  .c-bplus { color: #84cc16; } /* Lime */
-  .c-b { color: var(--accent-orange); }
-  .c-pass { color: var(--text-muted); }
-
-  .status-impossible { color: var(--accent-red); font-size: 0.85rem; font-weight: 700; text-align: right; }
-  .status-secured { color: var(--accent-green); font-size: 0.85rem; font-weight: 700; }
-
-  /* FOOTER */
-  .credit-wrapper { display: flex; justify-content: center; margin-top: 40px; padding-bottom: 20px; }
-  .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-  .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; color: var(--accent-blue); }
-  .credit-divider { height: 16px; width: 1px; background: var(--border); }
-
-  @media (max-width: 650px) {
-    header { flex-direction: column; align-items: flex-start; gap: 16px; }
-    .results-grid { grid-template-columns: 1fr; }
-  }
-</style>
+        @media (max-width: 650px) {
+            header { flex-direction: column; align-items: flex-start; gap: 16px; }
+            .input-row { flex-direction: column; gap: 16px; }
+            .cgpa-headers { display: none; } /* Hidden on mobile to keep stacking clean */
+            .course-row { grid-template-columns: 1fr 1fr 1fr 40px; position: relative; padding-top: 10px; margin-top: 10px; border-top: 1px dashed var(--border); }
+            .course-row:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+            .course-row input[type="text"] { grid-column: 1 / -1; margin-bottom: -4px; }
+        }
+    </style>
 </head>
 <body>
-<div class="container">
+    <div class="container">
 
-  <header>
-    <div class="title-block">
-      <a href="index.html" class="nav-btn">← Back to Routine</a>
-      <h1>Finals Target</h1>
-      <p>Grade Forecaster (60 Marks)</p>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn routine">📅 Routine</a>
+            <a href="bus.html" class="nav-btn bus">🚌 Bus</a>
+            <a href="calendar.html" class="nav-btn cal">📆 Calendar</a>
+            <a href="target.html" class="nav-btn tgt">🎯 Grade Tools</a>
+            <button id="install-btn" class="nav-btn install">📱 Install App</button>
+        </div>
+
+        <header>
+            <div class="title-block">
+                <h1>Academic Tools</h1>
+                <p>MBSTU Grading System</p>
+            </div>
+        </header>
+
+        <div class="day-tabs">
+            <button class="tab active" id="tab-target" onclick="switchTab('target')">Target Forecaster</button>
+            <button class="tab" id="tab-cgpa" onclick="switchTab('cgpa')">CGPA Calculator</button>
+        </div>
+
+        <div id="sec-target" class="tool-section visible">
+            <div class="calc-card">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Attendance <span>Max: 10</span></label>
+                        <input type="number" id="att-score" value="8" min="0" max="10" oninput="calculateTargets()">
+                    </div>
+                    <div class="input-group">
+                        <label>Class Tests <span>Max: 30</span></label>
+                        <input type="number" id="ct-score" value="22" min="0" max="30" oninput="calculateTargets()">
+                    </div>
+                </div>
+                <div class="total-internal-badge" id="internal-display">
+                    Total Internal: 30 / 40
+                </div>
+            </div>
+
+            <div class="results-grid" id="results-container">
+                </div>
+        </div>
+
+        <div id="sec-cgpa" class="tool-section">
+            <div class="calc-card">
+                <h3 style="font-size: 0.9rem; color: var(--accent-blue); text-transform: uppercase; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Overall CGPA (Optional)</h3>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Current CGPA</label>
+                        <input type="number" id="prev-cgpa" placeholder="e.g. 3.45" step="0.01" oninput="calculateCGPA()">
+                    </div>
+                    <div class="input-group">
+                        <label>Credits Completed</label>
+                        <input type="number" id="prev-credits" placeholder="e.g. 72" oninput="calculateCGPA()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="calc-card">
+                <h3 style="font-size: 0.9rem; color: var(--accent-green); text-transform: uppercase; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Current Semester</h3>
+                
+                <div class="cgpa-headers">
+                    <div>Course Name</div>
+                    <div>Credits</div>
+                    <div>Grade</div>
+                    <div></div>
+                </div>
+
+                <div id="course-list">
+                    </div>
+                <button class="add-row-btn" onclick="addCourseRow()">+ Add Another Course</button>
+
+                <div class="gpa-result-box">
+                    <div class="gpa-title">Semester GPA</div>
+                    <div class="gpa-value" id="sgpa-display">0.00</div>
+                    <div class="cumulative-gpa" id="cgpa-display" style="display: none;">Cumulative CGPA: 0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="credit-wrapper">
+            <div class="credit-pill">
+                <div>Crafted by <span class="name">Sajeeb Khan</span></div>
+            </div>
+        </div>
+
     </div>
-  </header>
 
-  <div class="calc-card">
-    <div class="input-row">
-      <div class="input-group">
-        <label>Attendance <span>Max: 10</span></label>
-        <input type="number" id="att-score" value="8" min="0" max="10" oninput="calculateTargets()">
-      </div>
-      <div class="input-group">
-        <label>Class Tests <span>Max: 30</span></label>
-        <input type="number" id="ct-score" value="22" min="0" max="30" oninput="calculateTargets()">
-      </div>
-    </div>
-    <div class="total-internal-badge" id="internal-display">
-      Total Internal: 30 / 40
-    </div>
-  </div>
+    <script>
+        // PWA INSTALL LOGIC
+        let deferredPrompt;
+        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-flex';
+        });
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { installBtn.style.display = 'none'; }
+                deferredPrompt = null;
+            }
+        });
 
-  <div class="results-grid" id="results-container">
-    </div>
+        // TAB SWITCHER
+        function switchTab(tab) {
+            document.getElementById('tab-target').classList.toggle('active', tab === 'target');
+            document.getElementById('tab-cgpa').classList.toggle('active', tab === 'cgpa');
+            document.getElementById('sec-target').classList.toggle('visible', tab === 'target');
+            document.getElementById('sec-cgpa').classList.toggle('visible', tab === 'cgpa');
+        }
 
-  <div class="credit-wrapper">
-    <div class="credit-pill">
-      <div>Crafted by <span class="name">Sajeeb Khan</span></div>
-      <div class="credit-divider"></div>
-      <div>Designed for MBSTU</div>
-    </div>
-  </div>
+        // ----------------------------------------------------
+        // TARGET FORECASTER LOGIC
+        // ----------------------------------------------------
+        const GRADES = [
+            { name: 'A+', min: 80, class: 'c-aplus' },
+            { name: 'A',  min: 75, class: 'c-a' },
+            { name: 'A-', min: 70, class: 'c-aminus' },
+            { name: 'B+', min: 65, class: 'c-bplus' },
+            { name: 'B',  min: 60, class: 'c-b' },
+            { name: 'B-', min: 55, class: 'c-bminus' },
+            { name: 'C+', min: 50, class: 'c-cplus' },
+            { name: 'C',  min: 45, class: 'c-c' },
+            { name: 'D',  min: 40, class: 'c-d' }
+        ];
 
-</div>
+        function calculateTargets() {
+            let attScore = parseFloat(document.getElementById('att-score').value) || 0;
+            let ctScore = parseFloat(document.getElementById('ct-score').value) || 0;
+            
+            if(attScore > 10) attScore = 10;
+            if(ctScore > 30) ctScore = 30;
 
-<script>
-// MBSTU Standard Grading Scale (Out of 100)
-const GRADES = [
-  { name: 'A+', min: 80, class: 'c-aplus' },
-  { name: 'A',  min: 75, class: 'c-a' },
-  { name: 'A-', min: 70, class: 'c-aminus' },
-  { name: 'B+', min: 65, class: 'c-bplus' },
-  { name: 'B',  min: 60, class: 'c-b' },
-  { name: 'Pass', min: 40, class: 'c-pass' }
-];
+            const internalScore = attScore + ctScore;
+            const finalTotal = 60; 
+            
+            document.getElementById('internal-display').textContent = `Total Internal: ${internalScore} / 40`;
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '';
 
-function calculateTargets() {
-  let attScore = parseFloat(document.getElementById('att-score').value) || 0;
-  let ctScore = parseFloat(document.getElementById('ct-score').value) || 0;
-  
-  // Cap inputs to maximums just in case
-  if(attScore > 10) attScore = 10;
-  if(ctScore > 30) ctScore = 30;
+            GRADES.forEach(grade => {
+                let neededInFinal = Math.ceil(grade.min - internalScore);
+                let displayHtml = '';
+                
+                if (neededInFinal > finalTotal) {
+                    displayHtml = `<span class="status-impossible">Impossible ❌</span>`;
+                } else if (neededInFinal <= 0) {
+                    displayHtml = `<span class="status-secured">Secured ✅</span>`;
+                } else {
+                    displayHtml = `<span class="target-score">${neededInFinal} <span style="font-size:0.75rem; color:var(--text-muted)">/ 60</span></span>`;
+                }
 
-  const internalScore = attScore + ctScore;
-  const finalTotal = 60; // Final exam is fixed at 60 marks
-  
-  // Update UI Display for Internal Marks
-  document.getElementById('internal-display').textContent = `Total Internal: ${internalScore} / 40`;
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `<div class="grade-badge ${grade.class}">${grade.name}</div><div>${displayHtml}</div>`;
+                resultsContainer.appendChild(card);
+            });
+        }
 
-  const resultsContainer = document.getElementById('results-container');
-  resultsContainer.innerHTML = '';
+        // ----------------------------------------------------
+        // CGPA CALCULATOR LOGIC
+        // ----------------------------------------------------
+        const GRADE_POINTS = {
+            'A+': 4.00, 'A': 3.75, 'A-': 3.50, 'B+': 3.25, 'B': 3.00,
+            'B-': 2.75, 'C+': 2.50, 'C': 2.25, 'D': 2.00, 'F': 0.00
+        };
 
-  GRADES.forEach(grade => {
-    // Math: Target Out of 100 minus what they already have = What they need on the 60 mark final
-    let neededInFinal = Math.ceil(grade.min - internalScore);
-    
-    let displayHtml = '';
-    
-    if (neededInFinal > finalTotal) {
-      displayHtml = `<span class="status-impossible">Impossible ❌</span>`;
-    } else if (neededInFinal <= 0) {
-      displayHtml = `<span class="status-secured">Secured ✅</span>`;
-    } else {
-      displayHtml = `<span class="target-score">${neededInFinal} <span style="font-size:0.75rem; color:var(--text-muted)">/ ${finalTotal}</span></span>`;
-    }
+        function getGradeOptions() {
+            let options = '<option value="" disabled selected>Grade</option>';
+            for (let g in GRADE_POINTS) {
+                options += `<option value="${GRADE_POINTS[g]}">${g}</option>`;
+            }
+            return options;
+        }
 
-    const card = document.createElement('div');
-    card.className = 'result-card';
-    card.innerHTML = `
-      <div class="grade-badge ${grade.class}">${grade.name}</div>
-      <div>${displayHtml}</div>
-    `;
-    
-    resultsContainer.appendChild(card);
-  });
-}
+        // UPDATED: Placeholder clearly says "Credits" instead of "Cr."
+        function addCourseRow(name = '', credits = 3) {
+            const list = document.getElementById('course-list');
+            const row = document.createElement('div');
+            row.className = 'course-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Course Name" value="${name}">
+                <input type="number" placeholder="Credits" value="${credits}" min="1" max="6" step="0.5" class="course-credit" oninput="calculateCGPA()">
+                <select class="course-grade" onchange="calculateCGPA()">
+                    ${getGradeOptions()}
+                </select>
+                <button class="del-btn" onclick="this.parentElement.remove(); calculateCGPA();">✕</button>
+            `;
+            list.appendChild(row);
+        }
 
-// Run once on load to show default values
-calculateTargets();
-</script>
+        function calculateCGPA() {
+            let totalGradePoints = 0;
+            let totalSemesterCredits = 0;
+
+            const credits = document.querySelectorAll('.course-credit');
+            const grades = document.querySelectorAll('.course-grade');
+
+            for(let i = 0; i < credits.length; i++) {
+                const cr = parseFloat(credits[i].value);
+                const gr = parseFloat(grades[i].value);
+                
+                if(!isNaN(cr) && !isNaN(gr)) {
+                    totalGradePoints += (cr * gr);
+                    totalSemesterCredits += cr;
+                }
+            }
+
+            let sgpa = totalSemesterCredits > 0 ? (totalGradePoints / totalSemesterCredits) : 0;
+            document.getElementById('sgpa-display').textContent = sgpa.toFixed(2);
+
+            // Cumulative Math
+            const prevCGPA = parseFloat(document.getElementById('prev-cgpa').value);
+            const prevCreds = parseFloat(document.getElementById('prev-credits').value);
+            const cgpaDisplay = document.getElementById('cgpa-display');
+
+            if(!isNaN(prevCGPA) && !isNaN(prevCreds) && prevCreds > 0) {
+                const totalHistoricPoints = prevCGPA * prevCreds;
+                const overallPoints = totalHistoricPoints + totalGradePoints;
+                const overallCreds = prevCreds + totalSemesterCredits;
+                const finalCGPA = overallPoints / overallCreds;
+                
+                cgpaDisplay.textContent = `Cumulative CGPA: ${finalCGPA.toFixed(2)}`;
+                cgpaDisplay.style.display = 'block';
+            } else {
+                cgpaDisplay.style.display = 'none';
+            }
+        }
+
+        // Initialize pages
+        calculateTargets();
+        
+        // Add 5 default blank rows for convenience
+        addCourseRow('', 3); addCourseRow('', 3); addCourseRow('', 3);
+        addCourseRow('', 1.5); addCourseRow('', 1.5);
+    </script>
 </body>
 </html>
