@@ -71,7 +71,7 @@
         /* FORECASTER RESULTS GRID */
         .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
         .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .grade-badge { font-size: 1.1rem; font-weight: 800; font-family: 'Inter', sans-serif; }
+        .grade-badge { font-size: 1.1rem; font-weight: 800; font-family: 'Inter', sans-serif; display: flex; align-items: baseline; gap: 6px; }
         .target-score { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; }
 
         /* CGPA SECTION */
@@ -97,7 +97,7 @@
         /* FOOTER */
         .credit-wrapper { display: flex; justify-content: center; margin-top: 40px; padding-bottom: 20px; }
         .credit-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 12px 24px; display: flex; align-items: center; gap: 14px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; color: var(--accent-blue); }
+        .credit-pill span.name { font-weight: 700; letter-spacing: 0.5px; color: var(--accent-teal); }
 
         @media (max-width: 650px) {
             header { flex-direction: column; align-items: flex-start; gap: 16px; }
@@ -226,15 +226,15 @@
         // TARGET FORECASTER LOGIC
         // ----------------------------------------------------
         const GRADES = [
-            { name: 'A+', min: 80, class: 'c-aplus' },
-            { name: 'A',  min: 75, class: 'c-a' },
-            { name: 'A-', min: 70, class: 'c-aminus' },
-            { name: 'B+', min: 65, class: 'c-bplus' },
-            { name: 'B',  min: 60, class: 'c-b' },
-            { name: 'B-', min: 55, class: 'c-bminus' },
-            { name: 'C+', min: 50, class: 'c-cplus' },
-            { name: 'C',  min: 45, class: 'c-c' },
-            { name: 'D',  min: 40, class: 'c-d' }
+            { name: 'A+', gpa: '4.00', min: 80, class: 'c-aplus' },
+            { name: 'A',  gpa: '3.75', min: 75, class: 'c-a' },
+            { name: 'A-', gpa: '3.50', min: 70, class: 'c-aminus' },
+            { name: 'B+', gpa: '3.25', min: 65, class: 'c-bplus' },
+            { name: 'B',  gpa: '3.00', min: 60, class: 'c-b' },
+            { name: 'B-', gpa: '2.75', min: 55, class: 'c-bminus' },
+            { name: 'C+', gpa: '2.50', min: 50, class: 'c-cplus' },
+            { name: 'C',  gpa: '2.25', min: 45, class: 'c-c' },
+            { name: 'D',  gpa: '2.00', min: 40, class: 'c-d' }
         ];
 
         function calculateTargets() {
@@ -265,7 +265,7 @@
 
                 const card = document.createElement('div');
                 card.className = 'result-card';
-                card.innerHTML = `<div class="grade-badge ${grade.class}">${grade.name}</div><div>${displayHtml}</div>`;
+                card.innerHTML = `<div class="grade-badge ${grade.class}">${grade.name} <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">(${grade.gpa})</span></div><div>${displayHtml}</div>`;
                 resultsContainer.appendChild(card);
             });
         }
