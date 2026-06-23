@@ -123,12 +123,15 @@
             text-transform: uppercase;
             text-decoration: none;
             transition: all 0.2s;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
         }
 
         .nav-btn.bus {
             background: rgba(16, 185, 129, 0.15);
             color: var(--accent-green);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .nav-btn.bus:hover {
@@ -139,7 +142,7 @@
         .nav-btn.cal {
             background: rgba(139, 92, 246, 0.15);
             color: var(--accent-purple);
-            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-color: rgba(139, 92, 246, 0.3);
         }
 
         .nav-btn.cal:hover {
@@ -150,12 +153,24 @@
         .nav-btn.tgt {
             background: rgba(245, 158, 11, 0.15);
             color: var(--accent-orange);
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-color: rgba(245, 158, 11, 0.3);
         }
 
         .nav-btn.tgt:hover {
             background: var(--accent-orange);
             color: #000;
+        }
+
+        /* Force Refresh Button */
+        .nav-btn.reset {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .nav-btn.reset:hover {
+            background: var(--accent-red);
+            color: #fff;
         }
 
         .live-clock {
@@ -847,6 +862,7 @@
             <a href="calendar.html" class="nav-btn cal">📆 Calendar</a>
             <a href="target.html" class="nav-btn tgt">🎯 Grade</a>
             <button id="install-btn" class="nav-btn install">📱 Install App</button>
+            <button onclick="hardResetApp()" class="nav-btn reset">🔄 Refresh</button>
         </div>
 
         <header>
@@ -876,7 +892,6 @@
 
         <div id="schedules-container"></div>
 
-        <!-- PROGRESS BAR MOVED HERE: Below classes, above legend -->
         <div class="premium-progress-card" id="progress-card">
             <div class="pp-header">
                 <div class="pp-title-box">
@@ -936,39 +951,33 @@
     </div>
 
     <script>
+        // --- HARD RESET LOGIC FOR CACHE & LOCALSTORAGE ---
+        function hardResetApp() {
+            if (confirm("This will clear saved data and pull the newest app version. Continue?")) {
+                // Clear all LocalStorage (Clears targets, etc)
+                localStorage.clear();
 
-        // Set your reset interval in hours (12 or 24)
-        const EXPIRATION_HOURS = 24;
-        const TIME_KEY = 'app_last_cleared_time';
-
-        function checkLocalStorageExpiry() {
-            const lastCleared = localStorage.getItem(TIME_KEY);
-            const currentTime = new Date().getTime();
-
-            if (lastCleared) {
-                // Calculate how many hours have passed
-                const timeDifference = currentTime - parseInt(lastCleared);
-                const hoursPassed = timeDifference / (1000 * 60 * 60);
-
-                if (hoursPassed >= EXPIRATION_HOURS) {
-                    // 24 hours have passed! Clear the storage
-                    localStorage.clear();
-
-                    // Set the new timestamp so the cycle starts over
-                    localStorage.setItem(TIME_KEY, currentTime.toString());
-                    console.log('24 hours passed. Local storage has been reset.');
-
-                    // Optional: Reload the page to fetch fresh data
-                    // window.location.reload(true); 
+                // Clear all PWA Service Worker Caches
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
                 }
-            } else {
-                // First time the user opens the app, set the initial timestamp
-                localStorage.setItem(TIME_KEY, currentTime.toString());
+                
+                // Unregister active Service Workers
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(registrations => {
+                        registrations.forEach(registration => registration.unregister());
+                    });
+                }
+
+                // Force browser reload directly from the server
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 500);
             }
         }
 
-        // Run the check immediately when the page loads
-        checkLocalStorageExpiry();
         // PWA INSTALL LOGIC
         let deferredPrompt;
         const installBtn = document.getElementById('install-btn');
